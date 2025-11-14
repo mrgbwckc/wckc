@@ -27,12 +27,12 @@ export default function ClientForm() {
     validate: zodMantineResolver(ClientSchema),
   });
 
-  // Set designer field once when user is loaded
+
   useEffect(() => {
     if (isLoaded && user?.username && form.values.designer === "") {
       form.setValues({ ...form.values, designer: user.username });
     }
-  }, [isLoaded, user?.username]); // only run when isLoaded or username changes
+  }, [isLoaded, user?.username]); 
   useEffect(() => {
     console.log("errors", form.errors);
   }, [form.errors]);
@@ -48,7 +48,6 @@ export default function ClientForm() {
     }
     console.log("submitting form");
     try {
-      // Ensure designer is always set from Clerk
       values.designer = user.username;
       console.log("Submitting client:", values);
       const res = await fetch("/api/Clients/addClient", {

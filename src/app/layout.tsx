@@ -13,6 +13,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import Navbar from "@/components/Navbar/Navbar";
 import { Notifications } from "@mantine/notifications";
 import localFont from "next/font/local";
+import QueryProvider from "@/components/providers/QueryProvider";
 
 const Quicksand = localFont({
   src: "../../public/Fonts/Quicksand/Quicksand-Regular.ttf",
@@ -31,11 +32,13 @@ export default function RootLayout({
         </head>
 
         <body className={`${Quicksand.className} `}>
-          <MantineProvider>
-            <Notifications />
-            <Navbar />
-            {children}
-          </MantineProvider>
+          <QueryProvider>
+            <MantineProvider>
+              <Notifications />
+              <Navbar />
+              {children}
+            </MantineProvider>
+          </QueryProvider>
         </body>
       </html>
     </ClerkProvider>

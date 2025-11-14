@@ -12,6 +12,8 @@ export const ClientSchema = z.object({
   phone2: z.string().optional(),
   email1: z.email().optional(),
   email2: z.email().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
 });
 
 export type ClientInput = z.infer<typeof ClientSchema>;
