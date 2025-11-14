@@ -1,6 +1,6 @@
 import { ZodType } from "zod";
 
-export function zodMantineResolver(schema: ZodType<any, any, any>) {
+export function zodResolver(schema: ZodType<any, any, any>) {
   return (values: any) => {
     const parsed = schema.safeParse(values);
 

@@ -1,0 +1,148 @@
+"use client";
+
+import { zodResolver } from "@/utils/zodResolver/zodResolver";
+import { ClientType, ClientSchema } from "@/zod/client.schema";
+import { useUser } from "@clerk/nextjs";
+import { useForm } from "@mantine/form";
+import { notifications } from "@mantine/notifications";
+import { useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Stack,
+  SimpleGrid,
+  TextInput,
+  Button,
+  Group,
+  Modal,
+  Fieldset,
+} from "@mantine/core";
+interface AddClientModalProps {
+  opened: boolean;
+  onClose: () => void;
+}
+export default function AddClient({ opened, onClose }: AddClientModalProps) {
+  const { user, isLoaded } = useUser();
+  const queryClient = useQueryClient();
+
+  const form = useForm<ClientType>({
+    initialValues: {
+      lastName: "",
+      street: "",
+      city: "",
+      province: "",
+      zip: "",
+      phone1: "",
+      phone2: "",
+      email1: "",
+      email2: "",
+    },
+    validate: zodResolver(ClientSchema),
+  });
+
+  // This effect to set the designer is correct
+  useEffect(() => {
+    if (isLoaded && user?.username && form.values.designer === "") {
+      form.setFieldValue("designer", user.username);
+    }
+  }, [isLoaded, user?.username, form]);
+
+  // Replaced manual handleSubmit with useMutation
+  const addMutation = useMutation({
+    mutationFn: async (values: ClientType) => {
+      // Logic from your handleSubmit
+      if (!isLoaded || !user?.username) {
+        throw new Error("User info not loaded yet. Please wait...");
+      }
+      values.designer = user.username; // Ensure designer is set
+
+      const res = await fetch("/api/Clients/addClient", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to create client");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      notifications.show({
+        title: "Success",
+        message: "Client added successfully",
+        color: "green",
+      });
+      form.reset(); // Reset form on success
+      // Invalidate the clients list so the table updates
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: "Error",
+        message: error.message,
+        color: "red",
+      });
+    },
+  });
+
+  return (
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title="Add New Client"
+      size="xl"
+      centered
+    >
+      <form
+        onSubmit={form.onSubmit((values) => addMutation.mutate(values))}
+        noValidate
+      >
+        <Stack>
+          <Fieldset legend="Client Details">
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              <TextInput
+                label="Client Name"
+                withAsterisk
+                {...form.getInputProps("lastName")}
+              />
+            </SimpleGrid>
+          </Fieldset>
+
+          <Fieldset legend="Address">
+            <Stack>
+              <TextInput label="Street" {...form.getInputProps("street")} />
+              <SimpleGrid cols={{ base: 1, sm: 3 }}>
+                <TextInput label="City" {...form.getInputProps("city")} />
+                <TextInput
+                  label="Province"
+                  {...form.getInputProps("province")}
+                />
+                <TextInput label="Zip Code" {...form.getInputProps("zip")} />
+              </SimpleGrid>
+            </Stack>
+          </Fieldset>
+
+          <Fieldset legend="Contact Information">
+            <Stack>
+              <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                <TextInput label="Phone 1" {...form.getInputProps("phone1")} />
+                <TextInput label="Phone 2" {...form.getInputProps("phone2")} />
+              </SimpleGrid>
+              <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                <TextInput label="Email 1" {...form.getInputProps("email1")} />
+                <TextInput label="Email 2" {...form.getInputProps("email2")} />
+              </SimpleGrid>
+            </Stack>
+          </Fieldset>
+
+          <Group justify="flex-end" mt="md">
+            <Button type="submit" loading={addMutation.isPending || !isLoaded}>
+              Add Client
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    </Modal>
+  );
+}

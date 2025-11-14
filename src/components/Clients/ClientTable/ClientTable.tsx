@@ -10,6 +10,11 @@ import {
   useReactTable,
   flexRender,
   PaginationState,
+  getPaginationRowModel,
+  ColumnFiltersState,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  FilterFn,
 } from "@tanstack/react-table";
 import {
   Table,
@@ -21,36 +26,68 @@ import {
   Center,
   Text,
   Box,
+  SimpleGrid,
+  Accordion,
+  Tooltip,
+  ActionIcon,
+  Button,
 } from "@mantine/core";
-import { FaSearch, FaSort, FaSortDown, FaSortUp } from "react-icons/fa";
-import { ClientSchema } from "@/zod/client.schema";
-import z from "zod";
-export type Client = z.infer<typeof ClientSchema>;
+import {
+  FaPencilAlt,
+  FaPlus,
+  FaSearch,
+  FaSort,
+  FaSortDown,
+  FaSortUp,
+} from "react-icons/fa";
+import { ClientType } from "@/zod/client.schema";
+import { useDisclosure } from "@mantine/hooks";
+import EditClient from "../EditClient/EditClient";
+import AddClient from "../AddClient/AddClient";
 
 export default function ClientsTable() {
-  const [globalFilter, setGlobalFilter] = useState("");
-
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 40,
+    pageSize: 17,
   });
+  const [editModalOpened, { open: editModalOpen, close: editModalClose }] =
+    useDisclosure(false);
+  const [addModalOpened, { open: openAddModal, close: closeAddModal }] =
+    useDisclosure(false);
+  const [selectedClient, setSelectedClient] = useState<ClientType | null>(null);
+
+  const multiColumnFilter: FilterFn<ClientType> = (
+    row,
+    columnId,
+    filterValue
+  ) => {
+    const filterText = String(filterValue).toLowerCase();
+    const phone1 = String(row.original.phone1 ?? "").toLowerCase();
+    const phone2 = String(row.original.phone2 ?? "").toLowerCase();
+    const email1 = String(row.original.email1 ?? "").toLowerCase();
+    const email2 = String(row.original.email2 ?? "").toLowerCase();
+
+    if (columnId === "phone1") {
+      return phone1.includes(filterText) || phone2.includes(filterText);
+    }
+
+    if (columnId === "email1") {
+      return email1.includes(filterText) || email2.includes(filterText);
+    }
+    const val = String(row.getValue(columnId) ?? "").toLowerCase();
+    return val.includes(filterText);
+  };
 
   const {
-    data: queryData,
+    data: clients,
     isLoading: loading,
     isError,
     error,
-  } = useQuery<{ data: Client[]; rowCount: number }>({
-    queryKey: ["clients", pagination],
+  } = useQuery<ClientType[]>({
+    queryKey: ["clients"],
     queryFn: async () => {
-      const params = new URLSearchParams({
-        pageIndex: String(pagination.pageIndex),
-        pageSize: String(pagination.pageSize),
-      });
-
-      const res = await fetch(
-        `/api/Clients/getAllClients?${params.toString()}`
-      );
+      const res = await fetch(`/api/Clients/getAllClients`);
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to fetch clients");
@@ -60,42 +97,110 @@ export default function ClientsTable() {
     placeholderData: (previousData) => previousData,
   });
 
-  const clients = queryData?.data ?? [];
-  const totalRowCount = queryData?.rowCount ?? 0;
-
-  const columnHelper = createColumnHelper<Client>();
+  const columnHelper = createColumnHelper<ClientType>();
   const columns = [
-    columnHelper.accessor("lastName", { header: "Client Name", size: 220 }),
-    columnHelper.accessor("designer", { header: "Designer", size: 80 }),
-    columnHelper.accessor("city", { header: "City", size: 150 }),
-    columnHelper.accessor("province", { header: "Province", size: 80 }),
-    columnHelper.accessor("phone1", { header: "Phone 1", size: 100 }),
-    columnHelper.accessor("phone2", { header: "Phone 2", size: 100 }),
-    columnHelper.accessor("email1", { header: "Email 1", size: 250 }),
-    columnHelper.accessor("email2", { header: "Email 2", size: 250 }),
+    columnHelper.accessor("id", {
+      header: "Client #",
+      size: 100,
+      minSize: 30,
+    }),
+    columnHelper.accessor("lastName", {
+      header: "Client Name",
+      size: 220,
+      minSize: 100,
+    }),
+    columnHelper.accessor("designer", {
+      header: "Designer",
+      size: 80,
+      minSize: 70,
+    }),
+    columnHelper.accessor("street", {
+      header: "Street",
+      size: 150,
+      minSize: 100,
+    }),
+    columnHelper.accessor("city", { header: "City", size: 150, minSize: 80 }),
+    columnHelper.accessor("province", {
+      header: "Province",
+      size: 80,
+      minSize: 70,
+    }),
+    columnHelper.accessor("zip", {
+      header: "Zip Code",
+      size: 150,
+      minSize: 80,
+    }),
+    columnHelper.accessor("phone1", {
+      header: "Phone 1",
+      size: 100,
+      minSize: 90,
+      filterFn: multiColumnFilter,
+    }),
+    columnHelper.accessor("phone2", {
+      header: "Phone 2",
+      size: 100,
+      minSize: 90,
+    }),
+    columnHelper.accessor("email1", {
+      header: "Email 1",
+      size: 250,
+      minSize: 120,
+      filterFn: multiColumnFilter,
+    }),
+    columnHelper.accessor("email2", {
+      header: "Email 2",
+      size: 250,
+      minSize: 120,
+    }),
     columnHelper.accessor("createdAt", {
       header: "Created",
       size: 130,
+      minSize: 100, // <-- Add minSize to all
       cell: (info) => new Date(info.getValue<string>()).toLocaleDateString(),
+    }),
+
+    columnHelper.display({
+      id: "actions",
+      header: "Actions",
+      size: 80,
+      minSize: 80,
+      cell: (info) => (
+        <Group justify="center">
+          <Tooltip label="Edit Client">
+            <ActionIcon
+              variant="subtle"
+              color="blue"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedClient(info.row.original);
+                editModalOpen();
+              }}
+            >
+              <FaPencilAlt size={16} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+      ),
     }),
   ];
 
   const table = useReactTable({
-    data: clients,
+    data: clients ?? [],
     columns,
     state: {
-      globalFilter,
+      columnFilters,
       pagination,
     },
     enableColumnResizing: true,
     columnResizeMode: "onChange",
-    manualPagination: true,
-    rowCount: totalRowCount,
+    onColumnFiltersChange: setColumnFilters,
     onPaginationChange: setPagination,
-    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
   if (loading) {
@@ -116,12 +221,52 @@ export default function ClientsTable() {
 
   return (
     <Box>
-      <TextInput
-        placeholder="Search clients (on this page)..."
-        leftSection={<FaSearch size={14} />}
-        value={globalFilter ?? ""}
-        onChange={(e) => setGlobalFilter(e.target.value)}
-      />
+      <Group justify="flex-end" mb="md">
+        <Button onClick={openAddModal} leftSection={<FaPlus size={14} />}>
+          New Client
+        </Button>
+      </Group>
+      <Accordion variant="contained" radius="md" mb="md">
+        <Accordion.Item value="search-filters">
+          <Accordion.Control icon={<FaSearch size={16} />}>
+            Search Filters
+          </Accordion.Control>
+          <Accordion.Panel>
+            <SimpleGrid cols={{ base: 1, sm: 3, md: 5 }} mt="sm" spacing="sm">
+              <TextInput
+                placeholder="Client Name..."
+                onChange={(e) =>
+                  table.getColumn("lastName")?.setFilterValue(e.target.value)
+                }
+              />
+              <TextInput
+                placeholder="Designer..."
+                onChange={(e) =>
+                  table.getColumn("designer")?.setFilterValue(e.target.value)
+                }
+              />
+              <TextInput
+                placeholder="City..."
+                onChange={(e) =>
+                  table.getColumn("city")?.setFilterValue(e.target.value)
+                }
+              />
+              <TextInput
+                placeholder="Phone..."
+                onChange={(e) =>
+                  table.getColumn("phone1")?.setFilterValue(e.target.value)
+                }
+              />
+              <TextInput
+                placeholder="Email..."
+                onChange={(e) =>
+                  table.getColumn("email1")?.setFilterValue(e.target.value)
+                }
+              />
+            </SimpleGrid>
+          </Accordion.Panel>
+        </Accordion.Item>
+      </Accordion>
 
       <ScrollArea mt="md">
         <Table striped highlightOnHover withColumnBorders layout="fixed">
@@ -129,14 +274,11 @@ export default function ClientsTable() {
             {table.getHeaderGroups().map((headerGroup) => (
               <Table.Tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
-                  // Get the resize handler once
                   const resizeHandler = header.getResizeHandler();
-
                   return (
                     <Table.Th
                       key={header.id}
                       colSpan={header.colSpan}
-                      // Apply sort click handler to the entire cell
                       onClick={header.column.getToggleSortingHandler()}
                       style={{
                         position: "relative",
@@ -161,7 +303,6 @@ export default function ClientsTable() {
                           <FaSort opacity={0.1} />
                         )}
                       </span>
-
                       {header.column.getCanResize() && (
                         <div
                           onMouseDown={(e) => {
@@ -223,10 +364,18 @@ export default function ClientsTable() {
         <Pagination
           hideWithOnePage
           total={table.getPageCount()}
-          value={pagination.pageIndex + 1}
+          value={table.getState().pagination.pageIndex + 1}
           onChange={(page) => table.setPageIndex(page - 1)}
         />
       </Group>
+      {selectedClient && (
+        <EditClient
+          opened={editModalOpened}
+          onClose={editModalClose}
+          client={selectedClient}
+        />
+      )}
+      <AddClient opened={addModalOpened} onClose={closeAddModal} />
     </Box>
   );
 }

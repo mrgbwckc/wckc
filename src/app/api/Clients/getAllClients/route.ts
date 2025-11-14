@@ -12,26 +12,10 @@ export async function GET(req: NextRequest) {
 
     const supabase = await createServerClient();
 
-    const { searchParams } = req.nextUrl;
-    const pageIndex = parseInt(searchParams.get("pageIndex") || "0", 10);
-    const pageSize = parseInt(searchParams.get("pageSize") || "10", 10);
-
-    const from = pageIndex * pageSize;
-    const to = from + pageSize - 1;
-
-    console.log(
-      `Fetching clients for user: ${userId}, page: ${pageIndex}, size: ${pageSize}`
-    );
-
-    const {
-      data: clients,
-      error,
-      count,
-    } = await supabase
+    const { data: clients, error } = await supabase
       .from("client")
-      .select("*", { count: "exact" })
-      .order("createdAt", { ascending: false })
-      .range(from, to);
+      .select("*")
+      .order("createdAt", { ascending: false });
 
     if (error) {
       console.error("Supabase query error:", error);
@@ -41,7 +25,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({ data: clients, rowCount: count ?? 0 });
+    return NextResponse.json(clients);
   } catch (error: any) {
     console.error("Error fetching clients:", error);
     return NextResponse.json(

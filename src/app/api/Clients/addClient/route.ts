@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ClientSchema } from "@/zod/client.schema";
 import { createServerClient } from "@/utils/supabase/server";
+import { auth } from "@clerk/nextjs/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    const { userId } = await auth();
 
+    if (!userId) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+    const supabase = await createServerClient();
     const json = await req.json();
     const input = ClientSchema.parse(json);
 
