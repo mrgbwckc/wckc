@@ -155,7 +155,7 @@ export default function ClientsTable() {
     columnHelper.accessor("createdAt", {
       header: "Created",
       size: 130,
-      minSize: 100, // <-- Add minSize to all
+      minSize: 100, 
       cell: (info) => new Date(info.getValue<string>()).toLocaleDateString(),
     }),
 

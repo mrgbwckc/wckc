@@ -39,21 +39,18 @@ export default function AddClient({ opened, onClose }: AddClientModalProps) {
     validate: zodResolver(ClientSchema),
   });
 
-  // This effect to set the designer is correct
   useEffect(() => {
     if (isLoaded && user?.username && form.values.designer === "") {
       form.setFieldValue("designer", user.username);
     }
   }, [isLoaded, user?.username, form]);
 
-  // Replaced manual handleSubmit with useMutation
   const addMutation = useMutation({
     mutationFn: async (values: ClientType) => {
-      // Logic from your handleSubmit
       if (!isLoaded || !user?.username) {
         throw new Error("User info not loaded yet. Please wait...");
       }
-      values.designer = user.username; // Ensure designer is set
+      values.designer = user.username;
 
       const res = await fetch("/api/Clients/addClient", {
         method: "POST",
@@ -73,8 +70,8 @@ export default function AddClient({ opened, onClose }: AddClientModalProps) {
         message: "Client added successfully",
         color: "green",
       });
-      form.reset(); // Reset form on success
-      // Invalidate the clients list so the table updates
+      form.reset();
+
       queryClient.invalidateQueries({ queryKey: ["clients"] });
     },
     onError: (error: Error) => {

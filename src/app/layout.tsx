@@ -27,9 +27,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" {...mantineHtmlProps}>
-        <head>
-          <ColorSchemeScript />
-        </head>
+        <head></head>
 
         <body className={`${Quicksand.className} `}>
           <QueryProvider>
