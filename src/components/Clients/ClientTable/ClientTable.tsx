@@ -117,9 +117,9 @@ export default function ClientsTable() {
       minSize: 100,
     }),
     columnHelper.accessor("designer", {
-      header: "Designer",
-      size: 80,
-      minSize: 70,
+      header: "Created By",
+      size: 120,
+      minSize: 90,
     }),
     columnHelper.accessor("street", {
       header: "Street",
