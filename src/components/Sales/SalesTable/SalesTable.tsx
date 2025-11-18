@@ -33,6 +33,7 @@ import {
   Button,
   SimpleGrid,
   Badge,
+  rem,
 } from "@mantine/core";
 import {
   FaPlus,
@@ -45,7 +46,6 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import { useSupabase } from "@/hooks/useSupabase";
 
-// --- TYPE DEFINITIONS (Provided by User) ---
 interface SalesOrderView {
   id: number;
   sales_order_number: string;
@@ -80,12 +80,7 @@ const genericFilter: FilterFn<SalesOrderView> = (
   return val.includes(filterText);
 };
 
-// --- START OF COMPONENT ---
-
 export default function SalesTable() {
-  // ----------------------------------------------------
-  // 1. STATE & HOOKS
-  // ----------------------------------------------------
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -100,12 +95,10 @@ export default function SalesTable() {
     null
   );
 
-  // NEW STATE: Tracks the active filter pill
   const [stageFilter, setStageFilter] = useState<"ALL" | "QUOTE" | "SOLD">(
     "ALL"
   );
 
-  // --- DATA FETCHING (TanStack Query) ---
   const {
     data: orders,
     isLoading: loading,
@@ -114,7 +107,6 @@ export default function SalesTable() {
   } = useQuery<SalesOrderView[]>({
     queryKey: ["sales_orders_full_list"],
     queryFn: async () => {
-      // NOTE: Querying sales_orders as primary source
       const { data, error: dbError } = await supabase
         .from("sales_orders")
         .select(
@@ -134,16 +126,13 @@ export default function SalesTable() {
     placeholderData: (previousData) => previousData,
   });
 
-  // --- DATA FILTERING (In-Memory Filter for Pills) ---
   const filteredOrders = useMemo(() => {
     if (!orders) return [];
     if (stageFilter === "ALL") return orders;
 
-    // Filter based on the selected stage pill
     return orders.filter((order) => order.stage === stageFilter);
   }, [orders, stageFilter]);
 
-  // --- REACT TABLE DEFINITION ---
   const columnHelper = createColumnHelper<SalesOrderView>();
   const columns = useMemo(
     () => [
@@ -152,11 +141,10 @@ export default function SalesTable() {
         size: 50,
         minSize: 60,
         enableColumnFilter: true,
-        filterFn: "includesString" as any, // Use includesString for simplicity
+        filterFn: "includesString" as any,
         cell: (info) => (
           <Text
             size="sm"
-            fw={600}
             c={info.row.original.stage === "SOLD" ? "green.8" : "blue.8"}
           >
             {info.getValue()}
@@ -172,7 +160,7 @@ export default function SalesTable() {
               minSize: 60,
               enableColumnFilter: true,
               filterFn: genericFilter as any,
-              cell: (info) => <Text fw={700}>{info.getValue() || "—"}</Text>,
+              cell: (info) => <Text>{info.getValue() || "—"}</Text>,
             }),
           ]
         : []),
@@ -188,7 +176,7 @@ export default function SalesTable() {
             {info.getValue()}
           </Badge>
         ),
-        enableColumnFilter: false, // Filtering handled by the pills above
+        enableColumnFilter: false,
       }),
       columnHelper.accessor("designer", {
         header: "Designer",
@@ -254,7 +242,7 @@ export default function SalesTable() {
   );
 
   const table = useReactTable({
-    data: filteredOrders, // CRITICAL: Pass the locally filtered data here
+    data: filteredOrders,
     columns,
     state: {
       columnFilters,
@@ -298,7 +286,7 @@ export default function SalesTable() {
       count: orders?.filter((o) => o.stage === "SOLD").length || 0,
     },
   ];
-  // --- GATING LOGIC ---
+
   if (!isAuthenticated || loading) {
     return (
       <Center style={{ height: "300px" }}>
@@ -315,47 +303,59 @@ export default function SalesTable() {
   }
 
   return (
-    <Box>
-      <Group justify="flex-end" mb="md">
-        <Button
-          onClick={() => router.push("/dashboard/sales/new")}
-          leftSection={<FaPlus size={14} />}
-        >
-          New Sales Order
-        </Button>
-      </Group>
-
+    <Box
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        padding: rem(20),
+        height: "calc(100vh - 40px)",
+      }}
+    >
       {/* --- STATUS FILTER PILLS --- */}
 
-      <Group mb="md" gap={8} wrap="wrap">
-        {stageItems.map((item) => (
-          <Button
-            key={item.key}
-            variant={stageFilter === item.key ? "filled" : "light"}
-            color={item.color}
-            radius="xl"
-            size="sm"
-            onClick={() => setStageFilter(item.key)}
-            style={{ cursor: "pointer", minWidth: 120 }}
-            px={12}
-          >
-            <Group gap={6}>
-              <Text fw={600} size="sm">
-                {item.label}
-              </Text>
-              <Badge
-                autoContrast
-                color={stageFilter === item.key ? "white" : item.color}
-                variant={stageFilter === item.key ? "filled" : "light"}
-                radius="sm"
-                size="sm"
-                style={{ cursor: "inherit" }}
-              >
-                {item.count}
-              </Badge>
-            </Group>
-          </Button>
-        ))}
+      <Group mb="md" align="center" style={{ width: "100%" }}>
+        {/* Pills container */}
+        <Group wrap="wrap">
+          {stageItems.map((item) => (
+            <Button
+              key={item.key}
+              variant={stageFilter === item.key ? "filled" : "light"}
+              color={item.color}
+              radius="xl"
+              size="sm"
+              onClick={() => setStageFilter(item.key)}
+              style={{ cursor: "pointer", minWidth: 120 }}
+              px={12}
+            >
+              <Group gap={6}>
+                <Text fw={600} size="sm">
+                  {item.label}
+                </Text>
+                <Badge
+                  autoContrast
+                  color={stageFilter === item.key ? "white" : item.color}
+                  variant={stageFilter === item.key ? "filled" : "light"}
+                  radius="sm"
+                  size="sm"
+                  style={{ cursor: "inherit" }}
+                >
+                  {item.count}
+                </Badge>
+              </Group>
+            </Button>
+          ))}
+        </Group>
+
+        {/* Spacer pushes button to the far right */}
+        <div style={{ flex: 1 }} />
+
+        {/* New Order button */}
+        <Button
+          onClick={() => router.push("/dashboard/sales/newsale")}
+          leftSection={<FaPlus size={14} />}
+        >
+          New Order
+        </Button>
       </Group>
 
       {/* SEARCH/FILTER ACCORDION */}
@@ -394,31 +394,80 @@ export default function SalesTable() {
       </Accordion>
 
       {/* DATA TABLE */}
-      <ScrollArea mt="md">
+      <ScrollArea
+        style={{
+          flex: 1,
+          minHeight: 0,
+          padding: rem(10),
+        }}
+        type="hover"
+      >
         <Table striped highlightOnHover withColumnBorders layout="fixed">
           <Table.Thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <Table.Tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <Table.Th
-                    key={header.id}
-                    colSpan={header.colSpan}
-                    onClick={header.column.getToggleSortingHandler()}
-                    style={{ width: header.getSize(), cursor: "pointer" }}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
+                {headerGroup.headers.map((header) => {
+                  const resizeHandler = header.getResizeHandler();
+                  return (
+                    <Table.Th
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      onClick={header.column.getToggleSortingHandler()}
+                      style={{
+                        position: "relative",
+                        width: header.getSize(),
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+
+                      <span className="inline-block ml-1">
+                        {header.column.getIsSorted() === "asc" && <FaSortUp />}
+                        {header.column.getIsSorted() === "desc" && (
+                          <FaSortDown />
                         )}
-                    <span className="inline-block ml-1">
-                      {header.column.getIsSorted() === "asc" && <FaSortUp />}
-                      {header.column.getIsSorted() === "desc" && <FaSortDown />}
-                      {!header.column.getIsSorted() && <FaSort opacity={0.1} />}
-                    </span>
-                  </Table.Th>
-                ))}
+                        {!header.column.getIsSorted() && (
+                          <FaSort opacity={0.1} />
+                        )}
+                      </span>
+                      {header.column.getCanResize() && (
+                        <div
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            resizeHandler(e);
+                          }}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            resizeHandler(e);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className={`resizer ${
+                            header.column.getIsResizing() ? "isResizing" : ""
+                          }`}
+                          style={{
+                            position: "absolute",
+                            right: 0,
+                            top: 0,
+                            height: "100%",
+                            width: "5px",
+                            background: header.column.getIsResizing()
+                              ? "blue"
+                              : "transparent",
+                            cursor: "col-resize",
+                            userSelect: "none",
+                            touchAction: "none",
+                          }}
+                        />
+                      )}
+                    </Table.Th>
+                  );
+                })}
               </Table.Tr>
             ))}
           </Table.Thead>
@@ -461,23 +510,29 @@ export default function SalesTable() {
       </ScrollArea>
 
       {/* PAGINATION */}
-      <Group justify="center" mt="md">
+      <Box
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: rem(250),
+          right: 0,
+          padding: "1rem 0",
+          background: "white",
+          borderTop: "1px solid #eee",
+          zIndex: 100,
+
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
         <Pagination
-          hideWithOnePage
+          withEdges
           total={table.getPageCount()}
           value={table.getState().pagination.pageIndex + 1}
           onChange={(page) => table.setPageIndex(page - 1)}
         />
-      </Group>
-
-      {/* DETAIL MODAL (Conceptual) */}
-      {/* {selectedOrder && (
-        <OrderDetailsModal 
-          opened={viewModalOpened} 
-          onClose={viewModalClose} 
-          order={selectedOrder} 
-        />
-      )} */}
+      </Box>
     </Box>
   );
 }

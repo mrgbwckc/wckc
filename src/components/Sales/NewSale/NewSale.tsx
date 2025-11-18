@@ -52,6 +52,7 @@ export default function NewSale() {
 
   const [successBannerData, setSuccessBannerData] = useState<{
     jobNum: string;
+    type: string;
   } | null>(null);
   const [parentBaseSelection, setParentBaseSelection] = useState<string | null>(
     null
@@ -188,18 +189,9 @@ export default function NewSale() {
       if (cabError) throw new Error(`Cabinet Error: ${cabError.message}`);
       const cabinetId = cabinetResult.id;
 
-      const now = new Date();
-      const year = now.getFullYear().toString().slice(-2);
-      const month = (now.getMonth() + 1).toString().padStart(2, "0");
-
-      const uniqueIdPortion = cabinetId;
-      prefix = stage === "SOLD" ? "S" : "Q";
-      const salesOrderNum = `${prefix}-${year}${month}-${uniqueIdPortion}`;
-
       const { data: soData, error: soError } = await supabase
         .from("sales_orders")
         .insert({
-          sales_order_number: salesOrderNum,
           client_id: client_id,
           cabinet_id: cabinetId,
           stage: stage,
@@ -214,11 +206,12 @@ export default function NewSale() {
           ...shipping,
           ...checklist,
         })
-        .select("id")
+        .select("id,sales_order_number")
         .single();
 
       if (soError) throw new Error(`Sales Order Error: ${soError.message}`);
       const salesOrderId = soData.id;
+      const salesOrderNum = soData.sales_order_number;
 
       let jobDataForReturn: JobResult | null = null;
       let finalJobNumber: string | null = null;
@@ -255,6 +248,7 @@ export default function NewSale() {
         success: true,
         salesOrderNum: salesOrderNum,
         finalJobNum: finalJobNumber,
+        jobStage: stage,
       };
     },
 
@@ -268,12 +262,13 @@ export default function NewSale() {
       if (data.finalJobNum) {
         setSuccessBannerData({
           jobNum: data.finalJobNum || "N/A",
+          type: data.jobStage,
         });
       } else {
         form.reset();
         setSelectedClientData(null);
         queryClient.refetchQueries({ queryKey: ["sales_orders"] });
-        router.push("/dashboard/sales");
+        router.push("/dashboard/");
       }
     },
 
@@ -292,7 +287,7 @@ export default function NewSale() {
         form.reset();
         setSelectedClientData(null);
         queryClient.invalidateQueries({ queryKey: ["sales_orders"] });
-        router.push("/dashboard/sales");
+        router.push("/dashboard");
         setSuccessBannerData(null);
       }, 3000);
     }
@@ -946,65 +941,110 @@ export default function NewSale() {
           queryClient.invalidateQueries({ queryKey: ["clients-list"] });
         }}
       />
-      {successBannerData && (
-        <Center
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
 
-            backgroundColor: "rgba(238, 240, 243, 0.98)",
-            zIndex: 1000,
-          }}
-        >
-          <Paper
-            shadow="xl"
-            radius="lg"
-            p={40}
-            withBorder
+      {successBannerData &&
+        (successBannerData.type === "SOLD" ? (
+          <Center
             style={{
-              minWidth: "350px",
-              maxWidth: "450px",
-              borderColor: "var(--mantine-color-green-5)",
-              borderWidth: "3px",
-              textAlign: "center",
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(238, 240, 243, 0.98)",
+              zIndex: 1000,
             }}
           >
-            <Stack align="center" gap="md">
-              {/* Visual Checkmark Icon */}
-              <FaCheckCircle size={56} color="var(--mantine-color-green-6)" />
+            <Paper
+              shadow="xl"
+              radius="lg"
+              p={40}
+              withBorder
+              style={{
+                minWidth: "350px",
+                maxWidth: "450px",
+                borderColor: "var(--mantine-color-green-5)",
+                borderWidth: "3px",
+                textAlign: "center",
+              }}
+            >
+              <Stack align="center" gap="md">
+                {/* Visual Checkmark Icon */}
+                <FaCheckCircle size={56} color="var(--mantine-color-green-6)" />
 
-              {/* Main Title */}
-              <Title
-                order={3}
-                c="dark"
-                mt="sm"
-                style={{ textTransform: "uppercase", letterSpacing: "1px" }}
-              >
-                New Job Created!
-              </Title>
-              <Badge
-                color="green"
-                size="xl"
-                variant="filled"
-                radius="md"
-                p="md"
-              >
-                <Text component="span" fw={900} size="xl">
-                  {successBannerData.jobNum}
+                {/* Main Title: JOB CREATED */}
+                <Title
+                  order={3}
+                  c="dark"
+                  mt="sm"
+                  style={{ textTransform: "uppercase", letterSpacing: "1px" }}
+                >
+                  New Job Created!
+                </Title>
+                <Badge
+                  color="green"
+                  size="xl"
+                  variant="filled"
+                  radius="md"
+                  p="md"
+                >
+                  <Text component="span" fw={900} size="xl">
+                    {successBannerData.jobNum}
+                  </Text>
+                </Badge>
+
+                {/* Auto-Dismiss Message */}
+                <Text size="sm" c="dimmed" mt="lg">
+                  Redirecting to dashboard...
                 </Text>
-              </Badge>
-
-              {/* Auto-Dismiss Message */}
-              <Text size="sm" c="dimmed" mt="lg">
-                Redirecting to dashboard...
-              </Text>
-            </Stack>
-          </Paper>
-        </Center>
-      )}
+              </Stack>
+            </Paper>
+          </Center>
+        ) : (
+          <Center
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(238, 240, 243, 0.98)",
+              zIndex: 1000,
+            }}
+          >
+            <Paper
+              shadow="xl"
+              radius="lg"
+              p={40}
+              withBorder
+              style={{
+                minWidth: "350px",
+                maxWidth: "450px",
+                borderColor: "var(--mantine-color-blue-5)",
+                borderWidth: "3px",
+                textAlign: "center",
+              }}
+            >
+              <Stack align="center" gap="md">
+                {/* Visual Checkmark Icon */}
+                <FaCheckCircle size={56} color="var(--mantine-color-blue-6)" />
+                {/* Main Title: QUOTE SAVED */}
+                <Title
+                  order={3}
+                  c="dark"
+                  mt="sm"
+                  style={{ textTransform: "uppercase", letterSpacing: "1px" }}
+                >
+                  Quote Saved Successfully
+                </Title>
+                {/* Auto-Dismiss Message */}
+                <Text size="sm" c="dimmed" mt="lg">
+                  Redirecting to dashboard...
+                </Text>
+              </Stack>
+            </Paper>
+          </Center>
+        ))}
     </Container>
   );
 }

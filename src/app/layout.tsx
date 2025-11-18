@@ -1,5 +1,4 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+"use client";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "./globals.css";
@@ -16,16 +15,27 @@ import localFont from "next/font/local";
 import QueryProvider from "@/components/providers/QueryProvider";
 import ClerkTokenProvider from "@/providers/ClerkTokenProvider";
 import SupabaseProvider from "@/providers/SupabaseProvider";
+import Sidebar from "@/components/Sidebar/Sidebar";
+import { usePathname } from "next/navigation";
 
 const Quicksand = localFont({
   src: "../../public/Fonts/Quicksand/Quicksand-Regular.ttf",
 });
-
+const dashboardLinks: {
+  iconName: string;
+  label: string;
+  path: string;
+}[] = [
+  { iconName: "FaHome", label: "Dashboard", path: "/dashboard" },
+  { iconName: "FaUsers", label: "Clients", path: "/dashboard/clients" },
+];
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+  const showSidebar = pathname.startsWith("/dashboard");
   return (
     <ClerkProvider>
       <html lang="en" {...mantineHtmlProps}>
@@ -37,8 +47,15 @@ export default function RootLayout({
               <QueryProvider>
                 <MantineProvider>
                   <Notifications />
-                  <Navbar />
-                  {children}
+                  <div
+                    style={{
+                      display: "flex",
+                      minHeight: "100vh",
+                    }}
+                  >
+                    {showSidebar && <Sidebar links={dashboardLinks} />}
+                    <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
+                  </div>
                 </MantineProvider>
               </QueryProvider>
             </SupabaseProvider>

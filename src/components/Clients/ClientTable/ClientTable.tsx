@@ -31,6 +31,7 @@ import {
   Tooltip,
   ActionIcon,
   Button,
+  rem,
 } from "@mantine/core";
 import {
   FaPencilAlt,
@@ -58,7 +59,6 @@ export default function ClientsTable() {
   const [addModalOpened, { open: openAddModal, close: closeAddModal }] =
     useDisclosure(false);
   const [selectedClient, setSelectedClient] = useState<ClientType | null>(null);
-
   const multiColumnFilter: FilterFn<ClientType> = (
     row,
     columnId,
@@ -232,7 +232,14 @@ export default function ClientsTable() {
   }
 
   return (
-    <Box>
+    <Box
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        padding: rem(20),
+        height: "calc(100vh - 40px)", // adjust based on navbar/sidebar height
+      }}
+    >
       <Group justify="flex-end" mb="md">
         <Button onClick={openAddModal} leftSection={<FaPlus size={14} />}>
           New Client
@@ -280,7 +287,14 @@ export default function ClientsTable() {
         </Accordion.Item>
       </Accordion>
 
-      <ScrollArea mt="md">
+      <ScrollArea
+        style={{
+          flex: 1, // fill remaining space
+          minHeight: 0, // required for flex layout
+          padding: rem(10),
+        }}
+        type="hover"
+      >
         <Table striped highlightOnHover withColumnBorders layout="fixed">
           <Table.Thead>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -372,14 +386,31 @@ export default function ClientsTable() {
         </Table>
       </ScrollArea>
 
-      <Group justify="center" mt="md">
+      <Box
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: rem(250), // sidebar width
+          right: 0,
+          padding: "1rem 0",
+          background: "white",
+          borderTop: "1px solid #eee",
+          zIndex: 100,
+
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
         <Pagination
           hideWithOnePage
+          withEdges
           total={table.getPageCount()}
           value={table.getState().pagination.pageIndex + 1}
           onChange={(page) => table.setPageIndex(page - 1)}
         />
-      </Group>
+      </Box>
+
       {selectedClient && (
         <EditClient
           opened={editModalOpened}

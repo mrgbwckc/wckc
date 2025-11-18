@@ -1,0 +1,1 @@
+ALTER SEQUENCE sales_order_sequence RESTART WITH 1;
