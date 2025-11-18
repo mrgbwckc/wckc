@@ -485,7 +485,13 @@ export default function SalesTable() {
               </Table.Tr>
             ) : (
               table.getRowModel().rows.map((row) => (
-                <Table.Tr key={row.id}>
+                <Table.Tr
+                  key={row.id}
+                  style={{ cursor: "pointer" }}
+                  onClick={() =>
+                    router.push(`/dashboard/sales/editsale/${row.original.id}`)
+                  }
+                >
                   {row.getVisibleCells().map((cell) => (
                     <Table.Td
                       key={cell.id}

@@ -197,7 +197,6 @@ export default function NewSale() {
           stage: stage,
           total: total,
           deposit: deposit,
-          invoice_balance: (total || 0) - (deposit || 0),
           designer: user?.username || "Staff",
           comments: comments,
           install: install,
