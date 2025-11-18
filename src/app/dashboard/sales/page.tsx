@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useForm } from "@mantine/form";
@@ -286,12 +286,6 @@ export default function NewSalesOrderPage() {
           jobNum: data.finalJobNum || "N/A",
         });
         // Cleanup/redirect is handled by the setTimeout watching successBannerData
-        const timer = setTimeout(() => {
-          form.reset();
-          setSelectedClientData(null);
-          queryClient.invalidateQueries({ queryKey: ["sales_orders"] });
-          router.push("/dashboard/sales");
-        }, 5000);
       } else {
         form.reset();
         setSelectedClientData(null);
@@ -310,7 +304,20 @@ export default function NewSalesOrderPage() {
       });
     },
   });
-
+  useEffect(() => {
+    let timer: any;
+    if (successBannerData) {
+      timer = setTimeout(() => {
+        // These cleanup steps run AFTER the visual banner has been displayed for 3 seconds
+        form.reset();
+        setSelectedClientData(null);
+        queryClient.invalidateQueries({ queryKey: ["sales_orders"] });
+        router.push("/dashboard/sales");
+        setSuccessBannerData(null); // Clear the state last
+      }, 3000); // Wait 3 seconds
+    }
+    return () => clearTimeout(timer);
+  }, [successBannerData, router, form, queryClient]);
   const copyClientToShipping = () => {
     if (!selectedClientData) {
       notifications.show({
