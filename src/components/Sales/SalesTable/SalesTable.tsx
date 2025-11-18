@@ -349,10 +349,14 @@ export default function SalesTable() {
         {/* Spacer pushes button to the far right */}
         <div style={{ flex: 1 }} />
 
-        {/* New Order button */}
         <Button
           onClick={() => router.push("/dashboard/sales/newsale")}
           leftSection={<FaPlus size={14} />}
+          style={{
+            background: "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
+            color: "white",
+            border: "none",
+          }}
         >
           New Order
         </Button>
@@ -533,6 +537,7 @@ export default function SalesTable() {
         }}
       >
         <Pagination
+          color="#4A00E0"
           withEdges
           total={table.getPageCount()}
           value={table.getState().pagination.pageIndex + 1}

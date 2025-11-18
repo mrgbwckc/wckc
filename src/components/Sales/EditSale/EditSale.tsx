@@ -282,7 +282,18 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
   };
 
   return (
-    <Container size="100%" p="md">
+    <Container
+      size="100%"
+      pl={10}
+      w={"100%"}
+      style={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        paddingRight: 0,
+        background: "linear-gradient(135deg, #DDE6F5 0%, #E7D9F0 100%)",
+      }}
+    >
       <Center py="md">
         <Text fw={600} size="lg">
           {salesOrderData
@@ -292,7 +303,16 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
             : "Loading..."}
         </Text>
       </Center>
-      <form noValidate onSubmit={form.onSubmit(handleSubmit)}>
+      <form
+        noValidate
+        onSubmit={form.onSubmit(handleSubmit)}
+        style={{
+          flex: 1, // take all remaining height
+          display: "flex",
+          flexDirection: "column",
+          overflowY: "auto",
+        }}
+      >
         <Stack>
           {/* MASTER DETAILS */}
           <Paper p="md" radius="md" shadow="xl">
@@ -318,7 +338,16 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
               {/* LINK TO JOB SELECT */}
               {salesOrderData?.stage === "SOLD" && (
                 <Box my="auto">
-                  <Badge size="lg" color="green">
+                  <Badge
+                    size="lg"
+                    color="green"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #28a745 0%, #218838 100%)",
+                      color: "white",
+                      border: "none",
+                    }}
+                  >
                     {(() => {
                       const jobNum = salesOrderData?.job?.job_number;
                       if (!jobNum) return "—";
@@ -356,6 +385,12 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                       size="xs"
                       onClick={() => setIsAddClientModalOpen(true)}
                       leftSection={<FaPlus size={12} />}
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
+                        color: "white",
+                        border: "none",
+                      }}
                     >
                       Add New Client
                     </Button>
@@ -496,6 +531,12 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                       leftSection={<FaCopy />}
                       onClick={copyClientToShipping}
                       disabled={!selectedClientData}
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
+                        color: "white",
+                        border: "none",
+                      }}
                     >
                       Copy from Billing
                     </Button>
@@ -767,21 +808,35 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
           <Paper
             withBorder
             p="md"
-            radius="md"
             pos="sticky"
             bottom={0}
             style={{ zIndex: 10 }}
           >
-            <Group mt="md" justify="flex-end">
+            <Group justify="flex-end">
               <Button
-                color="red"
-                size="md"
                 variant="outline"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #FF6B6B 0%, #FF3B3B 100%)",
+                  color: "white",
+                  border: "none",
+                }}
+                size="md"
                 onClick={() => router.back()}
               >
                 Cancel
               </Button>
-              <Button type="submit" size="md" color="blue">
+              <Button
+                type="submit"
+                size="md"
+                color="blue"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
+                  color: "white",
+                  border: "none",
+                }}
+              >
                 Update Sale
               </Button>
             </Group>

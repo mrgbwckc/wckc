@@ -162,6 +162,14 @@ export default function EditClient({
               type="submit"
               loading={form.submitting}
               disabled={!form.isDirty()}
+              style={{
+                background: !form.isDirty()
+                  ? "linear-gradient(135deg, #c6e2c6 0%, #a1d6a1 100%)"
+                  : "linear-gradient(135deg, #28a745 0%, #218838 100%)",
+                color: !form.isDirty() ? "gray" : "white",
+                border: "none",
+                cursor: !form.isDirty() ? "not-allowed" : "pointer",
+              }}
             >
               Save Changes
             </Button>

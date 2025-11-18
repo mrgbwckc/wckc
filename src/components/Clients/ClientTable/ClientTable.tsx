@@ -241,7 +241,15 @@ export default function ClientsTable() {
       }}
     >
       <Group justify="flex-end" mb="md">
-        <Button onClick={openAddModal} leftSection={<FaPlus size={14} />}>
+        <Button
+          onClick={openAddModal}
+          leftSection={<FaPlus size={14} />}
+          style={{
+            background: "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
+            color: "white",
+            border: "none",
+          }}
+        >
           New Client
         </Button>
       </Group>
@@ -405,6 +413,7 @@ export default function ClientsTable() {
         <Pagination
           hideWithOnePage
           withEdges
+          color="#4A00E0"
           total={table.getPageCount()}
           value={table.getState().pagination.pageIndex + 1}
           onChange={(page) => table.setPageIndex(page - 1)}

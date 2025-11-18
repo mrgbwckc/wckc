@@ -139,7 +139,15 @@ export default function AddClient({ opened, onClose }: AddClientModalProps) {
           </Fieldset>
 
           <Group justify="flex-end" mt="md">
-            <Button type="submit" loading={addMutation.isPending || !isLoaded}>
+            <Button
+              type="submit"
+              loading={addMutation.isPending || !isLoaded}
+              style={{
+                background: "linear-gradient(135deg, #28a745 0%, #218838 100%)",
+                color: "white",
+                border: "none",
+              }}
+            >
               Add Client
             </Button>
           </Group>

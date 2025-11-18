@@ -352,7 +352,7 @@ export default function NewSale() {
       pl={10}
       w={"100%"}
       style={{
-        height: "100vh", // full viewport height
+        height: "100vh",
         display: "flex",
         flexDirection: "column",
         paddingRight: 0,
@@ -381,8 +381,23 @@ export default function NewSale() {
                 <Switch
                   offLabel="Quote"
                   onLabel="Sold"
+                  thumbIcon={<FaCheckCircle />}
                   size="xl"
                   color="green"
+                  styles={{
+                    track: {
+                      background:
+                        form.values.stage === "SOLD"
+                          ? "linear-gradient(135deg, #28a745 0%, #218838 100%)"
+                          : "linear-gradient(135deg, #6c63ff 0%, #4a00e0 100%)",
+                      color: "white",
+                      border: "none",
+                    },
+                    thumb: {
+                      background:
+                        form.values.stage === "SOLD" ? "#218838" : "#4a00e0",
+                    },
+                  }}
                   checked={form.values.stage === "SOLD"}
                   onChange={(e) =>
                     form.setFieldValue(
@@ -442,6 +457,12 @@ export default function NewSale() {
                       size="xs"
                       onClick={() => setIsAddClientModalOpen(true)}
                       leftSection={<FaPlus size={12} />}
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
+                        color: "white",
+                        border: "none",
+                      }}
                     >
                       Add New Client
                     </Button>
@@ -605,6 +626,12 @@ export default function NewSale() {
                       leftSection={<FaCopy />}
                       onClick={() => copyClientToShipping()}
                       disabled={!selectedClientData}
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
+                        color: "white",
+                        border: "none",
+                      }}
                     >
                       Copy from Billing
                     </Button>
@@ -931,9 +958,13 @@ export default function NewSale() {
         >
           <Group justify="flex-end">
             <Button
-              color="red"
               size="md"
               variant="outline"
+              style={{
+                background: "linear-gradient(135deg, #FF6B6B 0%, #FF3B3B 100%)",
+                color: "white",
+                border: "none",
+              }}
               onClick={() => router.back()}
             >
               Cancel
@@ -942,7 +973,14 @@ export default function NewSale() {
               type="submit"
               size="md"
               loading={submitMutation.isPending}
-              color={form.values.stage === "SOLD" ? "green" : "blue"}
+              style={{
+                background:
+                  form.values.stage === "SOLD"
+                    ? "linear-gradient(135deg, #28a745 0%, #218838 100%)"
+                    : "linear-gradient(135deg, #6c63ff 0%, #4a00e0 100%)",
+                color: "white",
+                border: "none",
+              }}
               form="single-order-form"
             >
               {form.values.stage === "SOLD" ? "Process Sale" : "Save Quote"}
