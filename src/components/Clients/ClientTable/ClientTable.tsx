@@ -32,6 +32,7 @@ import {
   ActionIcon,
   Button,
   rem,
+  Flex,
 } from "@mantine/core";
 import {
   FaPencilAlt,
@@ -237,68 +238,96 @@ export default function ClientsTable() {
         display: "flex",
         flexDirection: "column",
         padding: rem(20),
-        height: "calc(100vh - 45px)", // adjust based on navbar/sidebar height
+        height: "calc(100vh - 45px)",
       }}
     >
-      <Group justify="flex-end" mb="md">
+      <Flex align="center" justify="space-between" mb="md">
+        {/* Accordion takes all remaining width */}
+        <Box
+          style={{
+            flex: 1,
+            marginRight: 12,
+            borderRadius: rem(8),
+          }}
+        >
+          <Accordion variant="contained" radius="md" transitionDuration={300}>
+            <Accordion.Item value="search-filters">
+              <Accordion.Control
+                icon={<FaSearch size={16} />}
+                styles={{
+                  label: {
+                    padding: 7,
+                  },
+                }}
+              >
+                Search Filters
+              </Accordion.Control>
+              <Accordion.Panel>
+                <SimpleGrid
+                  cols={{ base: 1, sm: 3, md: 5 }}
+                  mt="sm"
+                  spacing="sm"
+                >
+                  <TextInput
+                    placeholder="Client Name..."
+                    onChange={(e) =>
+                      table
+                        .getColumn("lastName")
+                        ?.setFilterValue(e.target.value)
+                    }
+                  />
+                  <TextInput
+                    placeholder="Designer..."
+                    onChange={(e) =>
+                      table
+                        .getColumn("designer")
+                        ?.setFilterValue(e.target.value)
+                    }
+                  />
+                  <TextInput
+                    placeholder="City..."
+                    onChange={(e) =>
+                      table.getColumn("city")?.setFilterValue(e.target.value)
+                    }
+                  />
+                  <TextInput
+                    placeholder="Phone..."
+                    onChange={(e) =>
+                      table.getColumn("phone1")?.setFilterValue(e.target.value)
+                    }
+                  />
+                  <TextInput
+                    placeholder="Email..."
+                    onChange={(e) =>
+                      table.getColumn("email1")?.setFilterValue(e.target.value)
+                    }
+                  />
+                </SimpleGrid>
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
+        </Box>
+
+        {/* Button stays on the right */}
         <Button
+          size="md"
           onClick={openAddModal}
           leftSection={<FaPlus size={14} />}
           style={{
             background: "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
             color: "white",
             border: "none",
+            whiteSpace: "nowrap",
           }}
         >
           New Client
         </Button>
-      </Group>
-      <Accordion variant="contained" radius="md" mb="md">
-        <Accordion.Item value="search-filters">
-          <Accordion.Control icon={<FaSearch size={16} />}>
-            Search Filters
-          </Accordion.Control>
-          <Accordion.Panel>
-            <SimpleGrid cols={{ base: 1, sm: 3, md: 5 }} mt="sm" spacing="sm">
-              <TextInput
-                placeholder="Client Name..."
-                onChange={(e) =>
-                  table.getColumn("lastName")?.setFilterValue(e.target.value)
-                }
-              />
-              <TextInput
-                placeholder="Designer..."
-                onChange={(e) =>
-                  table.getColumn("designer")?.setFilterValue(e.target.value)
-                }
-              />
-              <TextInput
-                placeholder="City..."
-                onChange={(e) =>
-                  table.getColumn("city")?.setFilterValue(e.target.value)
-                }
-              />
-              <TextInput
-                placeholder="Phone..."
-                onChange={(e) =>
-                  table.getColumn("phone1")?.setFilterValue(e.target.value)
-                }
-              />
-              <TextInput
-                placeholder="Email..."
-                onChange={(e) =>
-                  table.getColumn("email1")?.setFilterValue(e.target.value)
-                }
-              />
-            </SimpleGrid>
-          </Accordion.Panel>
-        </Accordion.Item>
-      </Accordion>
+      </Flex>
 
       <ScrollArea
         style={{
-          flex: 1, // fill remaining space
-          minHeight: 0, // required for flex layout
+          flex: 1,
+          minHeight: 0,
           padding: rem(10),
         }}
         type="hover"
@@ -398,7 +427,7 @@ export default function ClientsTable() {
         style={{
           position: "fixed",
           bottom: 0,
-          left: rem(250), // sidebar width
+          left: rem(250),
           right: 0,
           padding: "1rem 0",
           background: "white",

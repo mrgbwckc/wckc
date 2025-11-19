@@ -9,7 +9,7 @@ import {
   rem,
   useMantineTheme,
   Box,
-  Tooltip,
+  px,
 } from "@mantine/core";
 import Link from "next/link";
 import { FaHome, FaUsers } from "react-icons/fa";
@@ -116,10 +116,70 @@ export default function Sidebar({ links }: SidebarProps) {
       {/* Clerk Auth Buttons (bottom) */}
       <Box mt="auto" pt="lg">
         <SignedOut>
-          <SignInButton />
+          <SignInButton
+            mode="modal"
+            appearance={{
+              elements: {
+                button: {
+                  background: "#1a73e8",
+                  color: "#fff",
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  border: "1px solid #1669c1",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 150ms ease",
+                  "&:hover": {
+                    background: "#1669c1",
+                  },
+                },
+              },
+            }}
+          />
         </SignedOut>
         <SignedIn>
-          <UserButton showName={true} />
+          <UserButton
+            showName={true}
+            appearance={{
+              elements: {
+                rootBox: {
+                  width: "100%",
+                },
+
+                userButtonTrigger: {
+                  // THIS is the real clickable button ✔
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "100%",
+                  gap: "8px",
+
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  background:
+                    "linear-gradient(135deg, #f0edff 0%, #e4dbff 100%)",
+                  border: "1px solid #d3c9ff",
+
+                  cursor: "pointer",
+                  transition: "0.2s ease",
+
+                  "&:hover": {
+                    opacity: 0.9,
+                  },
+                },
+
+                userButtonOuterIdentifier: {
+                  color: "#4A00E0",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                },
+
+                avatarBox: {
+                  border: "2px solid #6C63FF",
+                },
+              },
+            }}
+          />
         </SignedIn>
       </Box>
     </Box>

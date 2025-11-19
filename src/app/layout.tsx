@@ -2,14 +2,9 @@
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "./globals.css";
-import {
-  ColorSchemeScript,
-  MantineProvider,
-  mantineHtmlProps,
-} from "@mantine/core";
+import { MantineProvider, mantineHtmlProps } from "@mantine/core";
 
 import { ClerkProvider } from "@clerk/nextjs";
-import Navbar from "@/components/Navbar/Navbar";
 import { Notifications } from "@mantine/notifications";
 import localFont from "next/font/local";
 import QueryProvider from "@/components/providers/QueryProvider";
@@ -17,7 +12,6 @@ import ClerkTokenProvider from "@/providers/ClerkTokenProvider";
 import SupabaseProvider from "@/providers/SupabaseProvider";
 import Sidebar from "@/components/Sidebar/Sidebar";
 import { usePathname } from "next/navigation";
-
 const Quicksand = localFont({
   src: "../../public/Fonts/Quicksand/Quicksand-Regular.ttf",
 });
