@@ -431,6 +431,11 @@ export default function SalesTable() {
           minHeight: 0,
           padding: rem(10),
         }}
+        styles={{
+          thumb: {
+            background: "linear-gradient(135deg, #8E2DE2, #4A00E0)",
+          },
+        }}
         type="hover"
       >
         <Table striped highlightOnHover withColumnBorders layout="fixed">

@@ -107,7 +107,7 @@ const genericFilter: FilterFn<ProductionJobView> = (
 };
 
 // --- 3. Component ---
-export default function ProductionScheduleTable() {
+export default function ProdTable() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -192,28 +192,25 @@ export default function ProductionScheduleTable() {
         const date = info.getValue();
         const status = info.row.original.production_schedule?.ship_status;
 
-        let color: "gray" | "yellow" | "green";
+        let gradient: string;
         let label: string;
 
         switch (status) {
           case "confirmed":
-            color = "green";
+            gradient = "linear-gradient(135deg, #4A00E0, #8E2DE2)"; // purple-blue
             label = "CONFIRMED";
             break;
           case "tentative":
-            color = "yellow";
+            gradient = "linear-gradient(135deg, #FF6A00, #FFB347)"; // orange-yellow
             label = "TENTATIVE";
             break;
           default:
-            color = "gray";
+            gradient = "linear-gradient(135deg, #B0BEC5, #78909C)"; // muted gray-blue
             label = "UNPROCESSED";
         }
 
         return (
-          <Group
-            align="center"
-            style={{ width: "100%", justifyContent: "flex-start" }}
-          >
+          <Group style={{ width: "100%" }} justify="space-between">
             <Text
               style={{
                 whiteSpace: "nowrap",
@@ -224,7 +221,18 @@ export default function ProductionScheduleTable() {
             >
               {date ? new Date(date).toLocaleDateString() : "TBD"}
             </Text>
-            <Badge color={color} variant="light" size="sm">
+            <Badge
+              variant="filled"
+              size="sm"
+              style={{
+                background: gradient,
+                color: "white",
+                fontWeight: 600,
+                border: 0,
+                borderRadius: "6px",
+                textTransform: "uppercase",
+              }}
+            >
               {label}
             </Badge>
           </Group>
@@ -427,6 +435,11 @@ export default function ProductionScheduleTable() {
           flex: 1,
           minHeight: 0,
           padding: rem(10),
+        }}
+        styles={{
+          thumb: {
+            background: "linear-gradient(135deg, #8E2DE2, #4A00E0)",
+          },
         }}
         type="hover"
       >
