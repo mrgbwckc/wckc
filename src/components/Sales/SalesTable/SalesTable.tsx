@@ -170,6 +170,7 @@ export default function SalesTable() {
         minSize: 40,
         cell: (info) => (
           <Badge
+            style={{ cursor: "inherit" }}
             color={info.getValue() === "SOLD" ? "green" : "blue"}
             variant="light"
           >
@@ -316,34 +317,61 @@ export default function SalesTable() {
       <Group mb="md" align="center" style={{ width: "100%" }}>
         {/* Pills container */}
         <Group wrap="wrap">
-          {stageItems.map((item) => (
-            <Button
-              key={item.key}
-              variant={stageFilter === item.key ? "filled" : "light"}
-              color={item.color}
-              radius="xl"
-              size="sm"
-              onClick={() => setStageFilter(item.key)}
-              style={{ cursor: "pointer", minWidth: 120 }}
-              px={12}
-            >
-              <Group gap={6}>
-                <Text fw={600} size="sm">
-                  {item.label}
-                </Text>
-                <Badge
-                  autoContrast
-                  color={stageFilter === item.key ? "white" : item.color}
-                  variant={stageFilter === item.key ? "filled" : "light"}
-                  radius="sm"
-                  size="sm"
-                  style={{ cursor: "inherit" }}
-                >
-                  {item.count}
-                </Badge>
-              </Group>
-            </Button>
-          ))}
+          {stageItems.map((item) => {
+            const isActive = stageFilter === item.key;
+
+            const gradients: Record<string, string> = {
+              ALL: "linear-gradient(135deg, #6c63ff 0%, #4a00e0 100%)",
+              QUOTE: "linear-gradient(135deg, #4da0ff 0%, #0066cc 100%)",
+              SOLD: "linear-gradient(135deg, #3ac47d 0%, #0f9f4f 100%)",
+            };
+
+            const gradientsLight: Record<string, string> = {
+              ALL: "linear-gradient(135deg, #e4d9ff 0%, #d7caff 100%)",
+              QUOTE: "linear-gradient(135deg, #d7e9ff 0%, #c2ddff 100%)",
+              SOLD: "linear-gradient(135deg, #d0f2e1 0%, #b9ebd3 100%)",
+            };
+
+            return (
+              <Button
+                key={item.key}
+                variant="filled"
+                radius="xl"
+                size="sm"
+                onClick={() => setStageFilter(item.key)}
+                style={{
+                  cursor: "pointer",
+                  minWidth: 120,
+                  background: isActive
+                    ? gradients[item.key]
+                    : gradientsLight[item.key],
+                  color: isActive ? "white" : "black",
+                  border: "none",
+                }}
+                px={12}
+              >
+                <Group gap={6}>
+                  <Text fw={600} size="sm">
+                    {item.label}
+                  </Text>
+
+                  <Badge
+                    autoContrast
+                    variant="filled"
+                    radius="xl"
+                    size="sm"
+                    style={{
+                      cursor: "inherit",
+                      background: "white",
+                      color: "black",
+                    }}
+                  >
+                    {item.count}
+                  </Badge>
+                </Group>
+              </Button>
+            );
+          })}
         </Group>
 
         {/* Spacer pushes button to the far right */}
@@ -369,22 +397,21 @@ export default function SalesTable() {
             Search Filters
           </Accordion.Control>
           <Accordion.Panel>
-            <SimpleGrid cols={{ base: 1, sm: 3 }} mt="sm" spacing="sm">
+            <SimpleGrid
+              cols={{ base: 1, sm: 2 }}
+              mt="sm"
+              spacing="xs"
+              display={"flex"}
+            >
               <TextInput
-                placeholder="Id..."
-                onChange={(e) =>
-                  table
-                    .getColumn("sales_order_number")
-                    ?.setFilterValue(e.target.value)
-                }
-              />
-              <TextInput
-                placeholder="Jo Number..."
+                placeholder="Job Number..."
+                w={rem(200)}
                 onChange={(e) =>
                   table.getColumn("job_number")?.setFilterValue(e.target.value)
                 }
               />
               <TextInput
+                w={rem(200)}
                 placeholder="Client Name..."
                 onChange={(e) =>
                   table
