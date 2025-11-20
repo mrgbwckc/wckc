@@ -31,6 +31,7 @@ import dayjs from "dayjs";
 import { notifications } from "@mantine/notifications";
 import {
   FaCalendarCheck,
+  FaCheck,
   FaCheckCircle,
   FaCogs,
   FaCut,
@@ -39,7 +40,10 @@ import {
   FaPaintBrush,
   FaTools,
   FaTruckLoading,
+  FaUser,
 } from "react-icons/fa";
+import { MdOutlineDoorSliding } from "react-icons/md";
+
 import z from "zod";
 
 // --- Nested Types & Schema Definition ---
@@ -116,7 +120,6 @@ type InstallerLookup = {
   last_name: string;
 };
 
-// NEW: Expanded Cabinet Specs Type
 type CabinetSpecs = {
   id: number;
   box: string;
@@ -154,7 +157,7 @@ type JobData = {
       email1: string;
       email2?: string;
     };
-    cabinet: CabinetSpecs; // Use the expanded type
+    cabinet: CabinetSpecs;
   };
 };
 
@@ -164,7 +167,7 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
   const { supabase, isAuthenticated } = useSupabase();
   const queryClient = useQueryClient();
 
-  // --- 1. Fetch Job and Installation Data (EXPANDED QUERY) ---
+  // --- 1. Fetch Job and Installation Data (Expanded Query) ---
   const { data: jobData, isLoading: isJobLoading } = useQuery<JobData>({
     queryKey: ["installation-editor", jobId],
     queryFn: async () => {
@@ -208,7 +211,7 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
     enabled: isAuthenticated && !!jobId,
   });
 
-  // --- 2. Fetch Installers Lookup Data (Unchanged) ---
+  // --- 2. Fetch Installers Lookup Data ---
   const { data: installers, isLoading: isInstallersLoading } = useQuery<
     InstallerLookup[]
   >({
@@ -232,11 +235,12 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
     }));
   }, [installers]);
 
-  // --- 3. Form Initialization (Updated for safe initialization) ---
+  // --- 3. Form Initialization ---
   const form = useForm<CombinedInstallFormValues>({
     initialValues: {
       installation_id: undefined,
       installer_id: null,
+      // FIX: Initialize nullable strings to "" for Mantine/React compatibility
       installation_notes: "",
       wrap_date: null,
       has_shipped: false,
@@ -246,10 +250,12 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
       inspection_completed: null,
       legacy_ref: "",
 
+      // Production Schedule Editable Fields
       prod_id: 0,
       ship_schedule: null,
       ship_status: "unprocessed",
 
+      // NEW EDITABLE PRODUCTION ACTUAL FIELDS
       in_plant_actual: null,
       doors_completed_actual: null,
       cut_finish_completed_actual: null,
@@ -272,6 +278,7 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
         form.setValues({
           installation_id: install.installation_id,
           installer_id: install.installer_id,
+          // FIX: Use nullish coalescing to ensure string fields are set to "" if null
           installation_notes: install.installation_notes ?? "",
           wrap_date: install.wrap_date
             ? dayjs(install.wrap_date).toDate()
@@ -287,12 +294,14 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
           inspection_completed: install.inspection_completed,
           legacy_ref: install.legacy_ref ?? "",
 
+          // Merge production fields
           prod_id: prod?.prod_id || 0,
           ship_schedule: prod?.ship_schedule
             ? dayjs(prod.ship_schedule).toDate()
             : null,
           ship_status: prod?.ship_status || "unprocessed",
 
+          // NEW EDITABLE PRODUCTION ACTUAL FIELDS
           in_plant_actual: prod?.in_plant_actual || null,
           doors_completed_actual: prod?.doors_completed_actual || null,
           cut_finish_completed_actual:
@@ -310,7 +319,7 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
     }
   }, [jobData]);
 
-  // --- 4. Mutation (Multi-Table Update) (Unchanged Logic) ---
+  // --- 4. Mutation (Multi-Table Update) ---
   const updateMutation = useMutation({
     mutationFn: async (values: CombinedInstallFormValues) => {
       if (!jobData?.installation?.installation_id) {
@@ -536,7 +545,7 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
         }}
       >
         <Grid gutter="xl">
-          <Grid.Col span={12}>
+          <Grid.Col span={9}>
             <Stack>
               {/* HEADER: Job Number & Basic Info */}
               <Paper
@@ -553,14 +562,11 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                   >
                     Installation Job # {jobData.job_number}
                   </Text>
-                  <Text size="md" fw={500} c="dimmed">
-                    Client: {client?.lastName || "N/A"}
-                  </Text>
                 </Group>
                 <Divider my="sm" color="violet" />
 
                 {/* DETAILED INFO: CLIENT, SHIPPING, CABINET (UPDATED) */}
-                <SimpleGrid cols={2}>
+                <SimpleGrid cols={3}>
                   {/* CLIENT & CONTACTS */}
                   <Paper
                     p="md"
@@ -568,10 +574,19 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                     shadow="xs"
                     style={{ background: "#f5f5f5" }}
                   >
-                    <Text fw={600} mb="xs" c="dark">
-                      Client Details
+                    <Text
+                      fw={600}
+                      size="lg"
+                      mb="md"
+                      c="#4A00E0"
+                      style={{ display: "flex", alignItems: "center" }}
+                    >
+                      <FaUser style={{ marginRight: 8 }} /> Client Details
                     </Text>
                     <Stack gap={3}>
+                      <Text size="sm">
+                        <strong>Client:</strong> {client?.lastName || "—"}
+                      </Text>
                       <Text size="sm">
                         <strong>Phone 1:</strong> {client?.phone1 || "—"}
                       </Text>
@@ -585,7 +600,7 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                         <strong>Email 2:</strong> {client?.email2 || "—"}
                       </Text>
                       <Text size="sm">
-                        <strong>Site Address:</strong>{" "}
+                        <strong>Address:</strong>{" "}
                         {[
                           shipping?.shipping_street,
                           shipping?.shipping_city,
@@ -597,18 +612,27 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                       </Text>
                     </Stack>
                   </Paper>
-                  {/* CABINET SPECS (EXPANDED VIEW) */}
+
+                  {/* CABINET SPECS (FIXED to requested format) */}
                   <Paper
                     p="md"
                     radius="md"
                     shadow="xs"
                     style={{ background: "#f5f5f5" }}
                   >
-                    <Text fw={600} mb="xs" c="dark">
+                    <Text
+                      fw={600}
+                      size="lg"
+                      mb="md"
+                      c="#4A00E0"
+                      style={{ display: "flex", alignItems: "center" }}
+                    >
+                      <MdOutlineDoorSliding style={{ marginRight: 8 }} />{" "}
                       Cabinet Specs
                     </Text>
+
                     <Grid>
-                      <Grid.Col span={8}>
+                      <Grid.Col span={6}>
                         <Text size="sm">
                           <strong>Box:</strong> {cabinet?.box || "—"}
                         </Text>
@@ -645,7 +669,7 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                           {cabinet?.drawer_box || "—"}
                         </Text>
                       </Grid.Col>
-                      <Grid.Col span={4}>
+                      <Grid.Col span={6}>
                         <Text
                           size="sm"
                           style={{
@@ -656,7 +680,7 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                         >
                           <strong>Glass:</strong>{" "}
                           {cabinet?.glass && (
-                            <FaCheckCircle color="#8e2de2" size={12} />
+                            <FaCheck color="#8e2de2" size={12} />
                           )}
                         </Text>
                         <Text
@@ -669,7 +693,7 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                         >
                           <strong>Doors Parts Only:</strong>{" "}
                           {cabinet?.doors_parts_only && (
-                            <FaCheckCircle color="#8e2de2" size={12} />
+                            <FaCheck color="#8e2de2" size={12} />
                           )}
                         </Text>
                         <Text
@@ -682,7 +706,7 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                         >
                           <strong>Handles Selected:</strong>{" "}
                           {cabinet?.handles_selected && (
-                            <FaCheckCircle color="#8e2de2" size={12} />
+                            <FaCheck color="#8e2de2" size={12} />
                           )}
                         </Text>
                         <Text
@@ -695,7 +719,7 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                         >
                           <strong>Handles Supplied:</strong>{" "}
                           {cabinet?.handles_supplied && (
-                            <FaCheckCircle color="#8e2de2" size={12} />
+                            <FaCheck color="#8e2de2" size={12} />
                           )}
                         </Text>
                         <Text
@@ -708,20 +732,66 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                         >
                           <strong>Hinge Soft Close:</strong>{" "}
                           {cabinet?.hinge_soft_close && (
-                            <FaCheckCircle color="#8e2de2" size={12} />
+                            <FaCheck color="#8e2de2" size={12} />
                           )}
                         </Text>
                       </Grid.Col>
                     </Grid>
                   </Paper>
+                  <Paper
+                    p="md"
+                    radius="md"
+                    shadow="xs"
+                    style={{ background: "#f5f5f5" }}
+                  >
+                    {prodSchedule && (
+                      <Box>
+                        <Text
+                          fw={600}
+                          size="lg"
+                          mb="md"
+                          c="#4A00E0"
+                          style={{ display: "flex", alignItems: "center" }}
+                        >
+                          <FaCogs style={{ marginRight: 8 }} /> Production
+                          Scheduled Dates
+                        </Text>
+
+                        <Stack gap="xs">
+                          {productionScheduledSteps.map((step) => (
+                            <Group
+                              key={step.key}
+                              justify="space-between"
+                              wrap="nowrap"
+                            >
+                              <Group gap="xs" wrap="nowrap">
+                                {step.icon}
+                                <Text size="sm" fw={500}>
+                                  {step.label}:
+                                </Text>
+                              </Group>
+                              <Text
+                                size="sm"
+                                c={prodSchedule[step.key] ? "dark" : "dimmed"}
+                                style={{ whiteSpace: "nowrap" }}
+                              >
+                                {prodSchedule[step.key]
+                                  ? dayjs(
+                                      prodSchedule[step.key] as string
+                                    ).format("YYYY-MM-DD")
+                                  : "—"}
+                              </Text>
+                            </Group>
+                          ))}
+                        </Stack>
+                      </Box>
+                    )}
+                  </Paper>
                 </SimpleGrid>
               </Paper>
             </Stack>
-          </Grid.Col>
 
-          {/* MAIN FORM AREA */}
-          <Grid.Col span={{ base: 12, md: 8 }}>
-            <Paper p="md" radius="md" shadow="xl" pb={30}>
+            <Paper p="md" radius="md" pb={30}>
               <Stack gap="xl">
                 {/* ---------------------------------------------------- */}
                 {/* 1. INSTALLER & SCHEDULE (Installation Table Fields) */}
@@ -869,255 +939,315 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
             </Paper>
           </Grid.Col>
 
-          {/* RIGHT COLUMN: STATUS TIMELINE & PRODUCTION DATES */}
-          <Grid.Col span={{ base: 12, md: 4 }}>
-            <Box pt="md" pos={{ base: "static", md: "sticky" }} top={0}>
-              {/* Installation Completion Status (Timeline) */}
-              <Text
-                fw={600}
-                size="lg"
-                mb="md"
-                c="violet"
-                style={{ display: "flex", alignItems: "center" }}
-              >
-                <FaCalendarCheck style={{ marginRight: 8 }} /> Completion Status
-              </Text>
-              <Paper shadow="sm" p="md" radius="md">
-                <Timeline
-                  bulletSize={24}
-                  lineWidth={2}
-                  active={-1}
-                  styles={{ root: { "--tl-color": "green" } }}
+          {/* RIGHT COLUMN: STICKY SIDEBAR FOR STATUS AND TRACKING */}
+          <Grid.Col span={3}>
+            {/* Implements the sticky/fixed position inspired by Scheduler.tsx */}
+            <Box pt="md" pos="sticky">
+              <Stack gap="xl">
+                {/* Block 1: Installation Completion Status (SIDE-BY-SIDE Timeline) */}
+                <Text
+                  fw={600}
+                  size="lg"
+                  c="violet"
+                  style={{ display: "flex", alignItems: "center" }}
                 >
-                  <TimelineItem
-                    title="Installation Complete"
-                    lineVariant="solid"
-                    bullet={
-                      <Box
-                        style={{
-                          backgroundColor: form.values.installation_completed
-                            ? "#28a745"
-                            : "#6b6b6b",
-                          borderRadius: "50%",
-                          width: 24,
-                          height: 24,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          aspectRatio: "1 / 1",
-                        }}
+                  <FaCalendarCheck style={{ marginRight: 8 }} /> Completion
+                  Status
+                </Text>
+                {/* MODIFICATION START: Use SimpleGrid to put timelines side-by-side */}
+                <SimpleGrid cols={2} spacing="xl">
+                  {/* LEFT TIMELINE: Production Progress Steps (Actuals) */}
+                  {prodSchedule && (
+                    <Paper p="md" radius="md">
+                      <Timeline
+                        bulletSize={20} // Reduced bullet size for smaller column
+                        lineWidth={2}
+                        active={-1}
+                        styles={{ root: { "--tl-color": "green" } }}
                       >
-                        <FaCheckCircle size={12} color="white" />
-                      </Box>
-                    }
-                    styles={{
-                      item: {
-                        "--tl-color": form.values.installation_completed
-                          ? "#28a745"
-                          : "#e0e0e0",
-                      },
-                      itemTitle: {
-                        color: form.values.installation_completed
-                          ? "#28a745"
-                          : "#6b6b6b",
-                      },
-                    }}
-                  >
-                    <Text size="xs" c="dimmed">
-                      {form.values.installation_completed
-                        ? "Signed Off:"
-                        : "Pending Sign-off"}
-                    </Text>
-                    <Text size="sm" fw={500}>
-                      {form.values.installation_completed
-                        ? dayjs(form.values.installation_completed).format(
-                            "YYYY-MM-DD HH:mm"
-                          )
-                        : "—"}
-                    </Text>
-                    <Button
-                      size="xs"
-                      mt="xs"
-                      variant="light"
-                      color={
-                        form.values.installation_completed ? "red" : "green"
-                      }
-                      onClick={() =>
-                        handleCompletionToggle("installation_completed")
-                      }
-                    >
-                      {form.values.installation_completed
-                        ? "Reset Completion"
-                        : "Sign Off Now"}
-                    </Button>
-                  </TimelineItem>
-
-                  <TimelineItem
-                    title="Final Inspection Completed"
-                    lineVariant="solid"
-                    bullet={
-                      <Box
-                        style={{
-                          backgroundColor: form.values.inspection_completed
+                        <TimelineItem
+                          key="prod-header"
+                          title="Production Actuals" // Shortened title
+                          lineVariant="solid"
+                          bullet={
+                            <Box
+                              style={{
+                                backgroundColor: "#4A00E0",
+                                borderRadius: "50%",
+                                width: 20,
+                                height: 20,
+                                minWidth: 20,
+                                minHeight: 20,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                aspectRatio: "1 / 1",
+                              }}
+                            >
+                              <FaCogs size={10} color="white" />
+                            </Box>
+                          }
+                          styles={{
+                            item: {
+                              "--tl-color": "#e0e0e0",
+                            },
+                            itemTitle: {
+                              color: "#4A00E0",
+                              fontWeight: 700,
+                              fontSize: "14px", // Adjusted font size
+                            },
+                          }}
+                        ></TimelineItem>
+                        {productionActualSteps.map((step) => {
+                          const isCompleted = form.values[step.key];
+                          const date = isCompleted
+                            ? dayjs(isCompleted as string).format("YY-MM-DD")
+                            : "—";
+                          const bulletColor = isCompleted
                             ? "#28a745"
-                            : "#6b6b6b",
-                          borderRadius: "50%",
-                          width: 24,
-                          height: 24,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          aspectRatio: "1 / 1",
-                        }}
-                      >
-                        <FaCheckCircle size={12} color="white" />
-                      </Box>
-                    }
-                    styles={{
-                      item: {
-                        "--tl-color": form.values.inspection_completed
-                          ? "#28a745"
-                          : "#e0e0e0",
-                      },
-                      itemTitle: {
-                        color: form.values.inspection_completed
-                          ? "#28a745"
-                          : "#6b6b6b",
-                      },
-                    }}
-                  >
-                    <Text size="xs" c="dimmed">
-                      {form.values.inspection_completed
-                        ? "Signed Off:"
-                        : "Pending Sign-off"}
-                    </Text>
-                    <Text size="sm" fw={500}>
-                      {form.values.inspection_completed
-                        ? dayjs(form.values.inspection_completed).format(
-                            "YYYY-MM-DD HH:mm"
-                          )
-                        : "—"}
-                    </Text>
-                    <Button
-                      size="xs"
-                      mt="xs"
-                      variant="light"
-                      color={form.values.inspection_completed ? "red" : "green"}
-                      onClick={() =>
-                        handleCompletionToggle("inspection_completed")
-                      }
-                    >
-                      {form.values.inspection_completed
-                        ? "Reset Sign-off"
-                        : "Sign Off Now"}
-                    </Button>
-                  </TimelineItem>
-                </Timeline>
-              </Paper>
+                            : "#6b6b6b";
 
-              {/* NEW SECTION: Production Progress Tracking */}
-              {prodSchedule && (
-                <Box mt="xl">
-                  <Text
-                    fw={600}
-                    size="lg"
-                    mb="md"
-                    c="green"
-                    style={{ display: "flex", alignItems: "center" }}
-                  >
-                    <FaCheckCircle style={{ marginRight: 8 }} /> Production
-                    Progress Tracking
-                  </Text>
-                  <Paper shadow="sm" p="md" radius="md" withBorder>
-                    <Stack gap="xs">
-                      {productionActualSteps.map((step) => {
-                        const isCompleted = form.values[step.key];
-                        const date = isCompleted
-                          ? dayjs(isCompleted as string).format(
-                              "YYYY-MM-DD HH:mm"
-                            )
-                          : "—";
-
-                        return (
-                          <Group
-                            key={step.key}
-                            justify="space-between"
-                            wrap="nowrap"
-                            align="center"
-                          >
-                            <Text size="sm" fw={500}>
-                              {step.label}:
-                            </Text>
-                            <Stack gap={2} align="flex-end" w="55%">
+                          return (
+                            <TimelineItem
+                              key={step.key}
+                              title={step.label}
+                              lineVariant="dashed"
+                              my={"20px"}
+                              bullet={
+                                <Box
+                                  style={{
+                                    backgroundColor: bulletColor,
+                                    borderRadius: "50%",
+                                    width: 20,
+                                    height: 20,
+                                    minWidth: 20,
+                                    minHeight: 20,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    aspectRatio: "1 / 1",
+                                  }}
+                                >
+                                  <FaCheckCircle size={10} color="white" />
+                                </Box>
+                              }
+                              style={{
+                                my: "5px", // Reduced margin
+                              }}
+                              styles={{
+                                item: {
+                                  "--tl-color": isCompleted
+                                    ? "#28a745"
+                                    : "#e0e0e0",
+                                },
+                                itemTitle: {
+                                  color: isCompleted ? "#28a745" : "#6b6b6b",
+                                  fontSize: "12px", // Adjusted font size
+                                },
+                              }}
+                            >
                               <Text
                                 size="xs"
-                                c={isCompleted ? "dark" : "dimmed"}
-                                style={{ whiteSpace: "nowrap" }}
+                                c="dimmed"
+                                display={"flex"}
+                                style={{
+                                  alignItems: "flex-start",
+                                  flexDirection: "column",
+                                }}
                               >
-                                {date}
+                                {isCompleted ? `Done: (${date})` : "Pending"}
                               </Text>
                               <Button
                                 size="xs"
+                                mt={2}
+                                pl={0}
                                 variant="light"
                                 color={isCompleted ? "red" : "green"}
                                 onClick={() => handleCompletionToggle(step.key)}
-                                fullWidth
                               >
                                 {isCompleted ? "Reset" : "Mark Done"}
                               </Button>
-                            </Stack>
-                          </Group>
-                        );
-                      })}
-                    </Stack>
-                  </Paper>
-                </Box>
-              )}
+                            </TimelineItem>
+                          );
+                        })}
+                      </Timeline>
+                    </Paper>
+                  )}
 
-              {/* Production Scheduled Dates (Read-Only) */}
-              {prodSchedule && (
-                <Box mt="xl">
-                  <Text
-                    fw={600}
-                    size="lg"
-                    mb="md"
-                    c="blue"
-                    style={{ display: "flex", alignItems: "center" }}
-                  >
-                    <FaCogs style={{ marginRight: 8 }} /> Production Scheduled
-                    Dates
-                  </Text>
-                  <Paper shadow="sm" p="md" radius="md" withBorder>
-                    <Stack gap="xs">
-                      {productionScheduledSteps.map((step) => (
-                        <Group
-                          key={step.key}
-                          justify="space-between"
-                          wrap="nowrap"
-                        >
-                          <Group gap="xs" wrap="nowrap">
-                            {step.icon}
-                            <Text size="sm" fw={500}>
-                              {step.label}:
-                            </Text>
-                          </Group>
-                          <Text
-                            size="sm"
-                            c={prodSchedule[step.key] ? "dark" : "dimmed"}
-                            style={{ whiteSpace: "nowrap" }}
+                  {/* RIGHT TIMELINE: Installation Phase */}
+                  <Paper p="md" radius="md">
+                    <Timeline
+                      bulletSize={20} // Reduced bullet size for smaller column
+                      lineWidth={2}
+                      active={-1}
+                      styles={{ root: { "--tl-color": "green" } }}
+                    >
+                      <TimelineItem
+                        key="install-header"
+                        title="Installation Phase"
+                        lineVariant="solid"
+                        bullet={
+                          <Box
+                            style={{
+                              backgroundColor: "#4A00E0",
+                              borderRadius: "50%",
+                              width: 20,
+                              height: 20,
+                              minWidth: 20,
+                              minHeight: 20,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              aspectRatio: "1 / 1",
+                            }}
                           >
-                            {prodSchedule[step.key]
-                              ? dayjs(prodSchedule[step.key] as string).format(
-                                  "YYYY-MM-DD"
-                                )
-                              : "—"}
-                          </Text>
-                        </Group>
-                      ))}
-                    </Stack>
+                            <FaTools size={10} color="white" />
+                          </Box>
+                        }
+                        styles={{
+                          item: {
+                            "--tl-color": "#e0e0e0",
+                          },
+                          itemTitle: {
+                            color: "#4A00E0",
+                            fontWeight: 700,
+                            fontSize: "14px",
+                          },
+                        }}
+                      ></TimelineItem>
+                      <TimelineItem
+                        title="Installation Complete"
+                        lineVariant="solid"
+                        bullet={
+                          <Box
+                            style={{
+                              backgroundColor: form.values
+                                .installation_completed
+                                ? "#28a745"
+                                : "#6b6b6b",
+                              borderRadius: "50%",
+                              width: 20,
+                              height: 20,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              aspectRatio: "1 / 1",
+                            }}
+                          >
+                            <FaCheckCircle size={10} color="white" />
+                          </Box>
+                        }
+                        styles={{
+                          item: {
+                            "--tl-color": form.values.installation_completed
+                              ? "#28a745"
+                              : "#e0e0e0",
+                          },
+                          itemTitle: {
+                            color: form.values.installation_completed
+                              ? "#28a745"
+                              : "#6b6b6b",
+                            fontSize: "12px",
+                          },
+                        }}
+                      >
+                        <Text size="xs" c="dimmed">
+                          {form.values.installation_completed
+                            ? "Signed Off:"
+                            : "Pending Sign-off"}
+                        </Text>
+                        <Text size="xs" fw={500}>
+                          {form.values.installation_completed
+                            ? dayjs(form.values.installation_completed).format(
+                                "YYYY-MM-DD HH:mm"
+                              )
+                            : "—"}
+                        </Text>
+                        <Button
+                          size="xs"
+                          mt={2}
+                          variant="light"
+                          color={
+                            form.values.installation_completed ? "red" : "green"
+                          }
+                          onClick={() =>
+                            handleCompletionToggle("installation_completed")
+                          }
+                        >
+                          {form.values.installation_completed
+                            ? "Reset"
+                            : "Sign Off"}
+                        </Button>
+                      </TimelineItem>
+
+                      <TimelineItem
+                        title="Final Inspection Completed"
+                        lineVariant="solid"
+                        bullet={
+                          <Box
+                            style={{
+                              backgroundColor: form.values.inspection_completed
+                                ? "#28a745"
+                                : "#6b6b6b",
+                              borderRadius: "50%",
+                              width: 20,
+                              height: 20,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              aspectRatio: "1 / 1",
+                            }}
+                          >
+                            <FaCheckCircle size={10} color="white" />
+                          </Box>
+                        }
+                        styles={{
+                          item: {
+                            "--tl-color": form.values.inspection_completed
+                              ? "#28a745"
+                              : "#e0e0e0",
+                          },
+                          itemTitle: {
+                            color: form.values.inspection_completed
+                              ? "#28a745"
+                              : "#6b6b6b",
+                            fontSize: "12px",
+                          },
+                        }}
+                      >
+                        <Text size="xs" c="dimmed">
+                          {form.values.inspection_completed
+                            ? "Signed Off:"
+                            : "Pending Sign-off"}
+                        </Text>
+                        <Text size="xs" fw={500}>
+                          {form.values.inspection_completed
+                            ? dayjs(form.values.inspection_completed).format(
+                                "YYYY-MM-DD HH:mm"
+                              )
+                            : "—"}
+                        </Text>
+                        <Button
+                          size="xs"
+                          mt={2}
+                          variant="light"
+                          color={
+                            form.values.inspection_completed ? "red" : "green"
+                          }
+                          onClick={() =>
+                            handleCompletionToggle("inspection_completed")
+                          }
+                        >
+                          {form.values.inspection_completed
+                            ? "Reset"
+                            : "Sign Off"}
+                        </Button>
+                      </TimelineItem>
+                    </Timeline>
                   </Paper>
-                </Box>
-              )}
+                </SimpleGrid>
+                {/* MODIFICATION END */}
+              </Stack>
             </Box>
           </Grid.Col>
         </Grid>

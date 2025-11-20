@@ -23,14 +23,15 @@ const dashboardLinks: {
   label: string;
   path: string;
 }[] = [
-  { iconName: "FaHome", label: "Dashboard", path: "/dashboard" },
-  { iconName: "FaUsers", label: "Clients", path: "/dashboard/clients" },
+  { iconName: "FaHome", label: "Sales", path: "/dashboard" },
   { iconName: "FaGears", label: "Production", path: "/dashboard/production" },
   {
     iconName: "FaShippingFast",
     label: "Installation",
     path: "/dashboard/installation",
   },
+
+  { iconName: "FaUsers", label: "Clients", path: "/dashboard/clients" },
 ];
 export default function RootLayout({
   children,

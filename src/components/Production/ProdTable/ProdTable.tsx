@@ -285,7 +285,7 @@ export default function ProdTable() {
     columnHelper.display({
       id: "production_status",
       header: "Progress Steps",
-      size: 600,
+      size: 500,
       minSize: 500,
       cell: (info) => {
         const schedule = info.row.original.production_schedule;
@@ -535,7 +535,7 @@ export default function ProdTable() {
           striped
           highlightOnHover
           withColumnBorders
-          style={{ minWidth: "1800px" }}
+          style={{ minWidth: "1850px" }}
         >
           <Table.Thead>
             {table.getHeaderGroups().map((headerGroup) => (
