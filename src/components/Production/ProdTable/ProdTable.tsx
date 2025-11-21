@@ -65,6 +65,7 @@ interface CabinetType {
 
 interface ProductionScheduleType {
   rush: boolean;
+  received_date?: string | null;
   placement_date?: string | null;
   ship_schedule?: string | null;
   ship_status: "unprocessed" | "tentative" | "confirmed";
@@ -182,7 +183,17 @@ export default function ProdTable() {
       enableColumnFilter: true,
       filterFn: genericFilter as any,
     }),
-
+    columnHelper.accessor("production_schedule.received_date", {
+      id: "received_date",
+      header: "Received Date",
+      size: 140,
+      minSize: 120,
+      cell: (info) => {
+        const date = info.getValue();
+        if (!date) return <Text c="orange">TBD</Text>;
+        return dayjs(date).format("YYYY-MM-DD");
+      },
+    }),
     columnHelper.accessor("production_schedule.placement_date", {
       id: "placement_date",
       header: "Placement Date",
@@ -458,6 +469,27 @@ export default function ProdTable() {
                     ?.setFilterValue(e.target.value)
                 }
               />
+              <DateInput
+                label="Received Date"
+                placeholder="Filter by Date"
+                clearable
+                value={
+                  getFilterValue("received_date")
+                    ? dayjs(getFilterValue("received_date")).toDate()
+                    : null
+                }
+                onChange={(date) => {
+                  // Safely format the Date object back to YYYY-MM-DD using Day.js
+                  const formattedDate = date
+                    ? dayjs(date).format("YYYY-MM-DD")
+                    : undefined;
+
+                  table
+                    .getColumn("received_date")
+                    ?.setFilterValue(formattedDate);
+                }}
+                valueFormat="YYYY-MM-DD"
+              />
               {/* Filter 5: Placement Date (Text search for simplicity) */}
               <DateInput
                 label="Placement Date"
@@ -535,7 +567,7 @@ export default function ProdTable() {
           striped
           highlightOnHover
           withColumnBorders
-          style={{ minWidth: "1850px" }}
+          style={{ minWidth: "1950px" }}
         >
           <Table.Thead>
             {table.getHeaderGroups().map((headerGroup) => (

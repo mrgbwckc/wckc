@@ -90,6 +90,7 @@ type SalesOrderType = {
 
 type SchedulingFormValues = {
   rush: boolean;
+  received_date: string | null;
   placement_date: string | null;
   doors_in_schedule: string | null;
   doors_out_schedule: string | null;
@@ -178,6 +179,7 @@ export default function EditProductionSchedulePage({
   const form = useForm<SchedulingFormValues>({
     initialValues: {
       rush: false,
+      received_date: null,
       placement_date: null,
       doors_in_schedule: null,
       doors_out_schedule: null,
@@ -549,7 +551,11 @@ export default function EditProductionSchedulePage({
                       <FaShippingFast size={18} />
                       <Text fw={600}>Placement & Shipping</Text>
                     </Group>
-                    <SimpleGrid cols={4} spacing="sm">
+                    <SimpleGrid cols={5} spacing="sm">
+                      <DateInput
+                        label="Received Date"
+                        {...form.getInputProps("received_date")}
+                      />
                       <DateInput
                         label="Placement Date"
                         {...form.getInputProps("placement_date")}
