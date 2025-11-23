@@ -12,7 +12,7 @@ import {
   px,
 } from "@mantine/core";
 import Link from "next/link";
-import { FaHome, FaUsers, FaShippingFast } from "react-icons/fa";
+import { FaHome, FaUsers, FaShippingFast, FaTools } from "react-icons/fa";
 import { FaGears } from "react-icons/fa6";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 
@@ -31,6 +31,7 @@ const iconMap: Record<string, any> = {
   FaUsers,
   FaGears,
   FaShippingFast,
+  FaTools,
 };
 
 type MainLinkProps = SidebarLink & {

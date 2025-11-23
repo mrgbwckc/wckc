@@ -34,7 +34,7 @@ import {
   MasterOrderSchema,
 } from "@/zod/salesOrder_Cabinets_Jobs.schema";
 import { ClientType } from "@/zod/client.schema";
-import { useJobNumbers } from "@/hooks/useJobNumbers";
+import { useJobBaseNumbers } from "@/hooks/useJobBaseNumbers";
 
 type EditSaleProps = {
   salesOrderId: number;

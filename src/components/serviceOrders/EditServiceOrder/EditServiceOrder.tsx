@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useForm } from "@mantine/form";
@@ -26,6 +26,7 @@ import {
   Box,
   Switch,
 } from "@mantine/core";
+import dayjs from "dayjs";
 import { DateInput } from "@mantine/dates";
 import { FaPlus, FaTrash, FaTools, FaSave } from "react-icons/fa";
 import { useSupabase } from "@/hooks/useSupabase";
@@ -36,7 +37,13 @@ import {
 import { useJobs } from "@/hooks/useJobs";
 import CustomRichTextEditor from "@/components/RichTextEditor/RichTextEditor";
 
-export default function NewServiceOrder() {
+interface EditServiceOrderProps {
+  serviceOrderId: string;
+}
+
+export default function EditServiceOrder({
+  serviceOrderId,
+}: EditServiceOrderProps) {
   const { supabase, isAuthenticated } = useSupabase();
   const { user } = useUser();
   const router = useRouter();
@@ -67,11 +74,32 @@ export default function NewServiceOrder() {
     }));
   }, [installersData]);
 
-  // 3. Form Setup
+  // 3. Fetch Service Order Details
+  const { data: serviceOrderData, isLoading: soLoading } = useQuery({
+    queryKey: ["service_order", serviceOrderId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("service_orders")
+        .select(
+          `
+          *,
+          service_order_parts (*)
+        `
+        )
+        .eq("service_order_id", serviceOrderId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAuthenticated,
+  });
+
+  // 4. Form Setup
   const form = useForm<ServiceOrderInput>({
     initialValues: {
       job_id: "",
-      service_order_number: "", // Could be auto-generated logic here if preferred
+      service_order_number: "",
       due_date: null,
       installer_id: null,
       service_type: "",
@@ -86,63 +114,46 @@ export default function NewServiceOrder() {
     validate: zodResolver(ServiceOrderSchema),
   });
 
-  const [existingSOCount, setExistingSOCount] = useState<number | null>(null);
-
-  // Auto-populate Service Order Number when Job ID changes
+  // Populate form when data is loaded
   useEffect(() => {
-    const fetchSoNumber = async () => {
-      const jobId = form.values.job_id;
-      if (!jobId) {
-        setExistingSOCount(null);
-        return;
-      }
+    if (serviceOrderData) {
+      form.setValues({
+        job_id: String(serviceOrderData.job_id),
+        service_order_number: serviceOrderData.service_order_number,
+        due_date: serviceOrderData.due_date
+          ? new Date(serviceOrderData.due_date)
+          : null,
+        installer_id: serviceOrderData.installer_id
+          ? String(serviceOrderData.installer_id)
+          : null,
+        service_type: serviceOrderData.service_type || "",
+        service_type_detail: serviceOrderData.service_type_detail || "",
+        service_by: serviceOrderData.service_by || "",
+        service_by_detail: serviceOrderData.service_by_detail || "",
+        hours_estimated: serviceOrderData.hours_estimated || 0,
+        chargeable: serviceOrderData.chargeable || false,
+        comments: serviceOrderData.comments || "",
+        completed_at: serviceOrderData.completed_at
+          ? new Date(serviceOrderData.completed_at)
+          : null,
+        parts: serviceOrderData.service_order_parts.map((p: any) => ({
+          qty: p.qty,
+          part: p.part,
+          description: p.description || "",
+        })),
+      });
+    }
+  }, [serviceOrderData]);
 
-      try {
-        // 1. Get Job Number
-        const { data: jobData, error: jobError } = await supabase
-          .from("jobs")
-          .select("job_number")
-          .eq("id", jobId)
-          .single();
-
-        if (jobError) throw jobError;
-        if (!jobData) return;
-
-        // 2. Get Count of existing Service Orders for this job
-        const { count, error: countError } = await supabase
-          .from("service_orders")
-          .select("*", { count: "exact", head: true })
-          .eq("job_id", jobId);
-
-        if (countError) throw countError;
-
-        setExistingSOCount(count || 0);
-
-        // 3. Generate Next Suffix
-        const nextSuffix = (count || 0) + 1;
-        const nextSoNumber = `${jobData.job_number}-S${nextSuffix}`;
-
-        // 4. Set Value
-        form.setFieldValue("service_order_number", nextSoNumber);
-      } catch (error) {
-        console.error("Error auto-generating SO number:", error);
-      }
-    };
-
-    fetchSoNumber();
-  }, [form.values.job_id]);
-
-  // ... (rest of the code)
-
-  // 4. Submit Mutation
+  // 5. Submit Mutation
   const submitMutation = useMutation({
     mutationFn: async (values: ServiceOrderInput) => {
       if (!user) throw new Error("User not authenticated");
 
-      // A. Insert Service Order
-      const { data: soData, error: soError } = await supabase
+      // A. Update Service Order
+      const { error: soError } = await supabase
         .from("service_orders")
-        .insert({
+        .update({
           job_id: Number(values.job_id),
           service_order_number: values.service_order_number,
           due_date: values.due_date,
@@ -156,17 +167,26 @@ export default function NewServiceOrder() {
           hours_estimated: values.hours_estimated,
           chargeable: values.chargeable,
           comments: values.comments,
+          completed_at: values.completed_at,
         })
-        .select("service_order_id")
-        .single();
+        .eq("service_order_id", serviceOrderId);
 
-      if (soError) throw new Error(`Create Order Error: ${soError.message}`);
-      const newId = soData.service_order_id;
+      if (soError) throw new Error(`Update Order Error: ${soError.message}`);
 
-      // B. Insert Parts (if any)
+      // B. Update Parts (Delete all and re-insert)
+      // First, delete existing parts
+      const { error: deleteError } = await supabase
+        .from("service_order_parts")
+        .delete()
+        .eq("service_order_id", serviceOrderId);
+
+      if (deleteError)
+        throw new Error(`Delete Parts Error: ${deleteError.message}`);
+
+      // Then insert new parts
       if (values.parts && values.parts.length > 0) {
         const partsPayload = values.parts.map((p) => ({
-          service_order_id: newId,
+          service_order_id: Number(serviceOrderId),
           qty: p.qty,
           part: p.part,
           description: p.description || "",
@@ -179,17 +199,18 @@ export default function NewServiceOrder() {
         if (partsError)
           throw new Error(`Create Parts Error: ${partsError.message}`);
       }
-
-      return newId;
     },
     onSuccess: () => {
       notifications.show({
         title: "Success",
-        message: "Service Order created successfully.",
+        message: "Service Order updated successfully.",
         color: "green",
       });
       queryClient.invalidateQueries({ queryKey: ["service_orders_list"] });
-      router.push("/dashboard/serviceorders"); // Assuming you will create this list page later
+      queryClient.invalidateQueries({
+        queryKey: ["service_order", serviceOrderId],
+      });
+      router.push("/dashboard/serviceorders");
     },
     onError: (err: any) => {
       notifications.show({
@@ -209,11 +230,11 @@ export default function NewServiceOrder() {
     form.insertListItem("parts", { qty: 1, part: "", description: "" });
   };
 
-  if (jobsLoading || installersLoading) {
+  if (jobsLoading || installersLoading || soLoading) {
     return (
       <Center h="100vh">
         <Loader />
-        <Text ml="md">Loading Resources...</Text>
+        <Text ml="md">Loading Service Order...</Text>
       </Center>
     );
   }
@@ -247,7 +268,7 @@ export default function NewServiceOrder() {
             <Group>
               <FaTools size={24} color="#4A00E0" />
               <Text fw={700} size="xl" c="#4A00E0">
-                New Service Order
+                Edit Service Order
               </Text>
             </Group>
           </Paper>
@@ -265,21 +286,10 @@ export default function NewServiceOrder() {
                     withAsterisk
                     {...form.getInputProps("job_id")}
                   />
-
                   <TextInput
-                    label={
-                      <Group gap="xs">
-                        <Text size="sm">Service Order Number</Text>
-                        {existingSOCount ? (
-                          <Text span size="xs" c="dimmed" fw={400}>
-                            {existingSOCount > 1
-                              ? `Job has ${existingSOCount} existing Service Orders`
-                              : `Job has ${existingSOCount} existing Service Order`}
-                          </Text>
-                        ) : null}
-                      </Group>
-                    }
+                    label="Service Order Number"
                     placeholder="e.g. SO-40100-1"
+                    withAsterisk
                     {...form.getInputProps("service_order_number")}
                   />
                 </SimpleGrid>
@@ -348,6 +358,30 @@ export default function NewServiceOrder() {
                     onChange={(html) => form.setFieldValue("comments", html)}
                   />
                 </Box>
+
+                <Group mt="md">
+                  <Switch
+                    label="Mark as Completed"
+                    size="md"
+                    color="violet"
+                    checked={!!form.values.completed_at}
+                    onChange={(event) => {
+                      const isChecked = event.currentTarget.checked;
+                      form.setFieldValue(
+                        "completed_at",
+                        isChecked ? new Date() : null
+                      );
+                    }}
+                  />
+                  {form.values.completed_at && (
+                    <Text size="sm" c="dimmed">
+                      Completed on:{" "}
+                      {dayjs(form.values.completed_at).format(
+                        "YYYY-MM-DD HH:mm"
+                      )}
+                    </Text>
+                  )}
+                </Group>
               </Fieldset>
             </Stack>
           </Paper>
@@ -458,7 +492,7 @@ export default function NewServiceOrder() {
                 border: "none",
               }}
             >
-              Create Service Order
+              Save Changes
             </Button>
           </Group>
         </Paper>

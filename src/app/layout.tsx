@@ -6,6 +6,7 @@ import "@mantine/core/styles/default-css-variables.css";
 import "@mantine/core/styles/global.css";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
+import "@mantine/tiptap/styles.css";
 import "./globals.css";
 import { MantineProvider, mantineHtmlProps } from "@mantine/core";
 
@@ -31,6 +32,11 @@ const dashboardLinks: {
     iconName: "FaShippingFast",
     label: "Installation",
     path: "/dashboard/installation",
+  },
+  {
+    iconName: "FaTools",
+    label: "Service Orders",
+    path: "/dashboard/serviceorders",
   },
 
   { iconName: "FaUsers", label: "Clients", path: "/dashboard/clients" },

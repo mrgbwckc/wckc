@@ -36,13 +36,13 @@ import {
 } from "@/zod/salesOrder_Cabinets_Jobs.schema";
 import { ClientType } from "@/zod/client.schema";
 import AddClient from "@/components/Clients/AddClient/AddClient";
-import { useJobNumbers } from "@/hooks/useJobNumbers";
+import { useJobBaseNumbers } from "@/hooks/useJobBaseNumbers";
 
 export default function NewSale() {
   const { supabase, isAuthenticated } = useSupabase();
   const { user } = useUser();
   const { data: jobBaseOptions, isLoading: jobsLoading } =
-    useJobNumbers(isAuthenticated);
+    useJobBaseNumbers(isAuthenticated);
   const router = useRouter();
   const queryClient = useQueryClient();
 
