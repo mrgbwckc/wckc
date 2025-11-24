@@ -215,6 +215,7 @@ export default function ProdTable() {
                 border: 0,
                 borderRadius: "6px",
                 textTransform: "uppercase",
+                cursor: "inherit",
               }}
             >
               {label}
