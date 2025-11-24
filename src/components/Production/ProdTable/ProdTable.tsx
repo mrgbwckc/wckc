@@ -567,7 +567,7 @@ export default function ProdTable() {
           striped
           highlightOnHover
           withColumnBorders
-          style={{ minWidth: "1950px" }}
+          style={{ minWidth: "2100px" }}
         >
           <Table.Thead>
             {table.getHeaderGroups().map((headerGroup) => (

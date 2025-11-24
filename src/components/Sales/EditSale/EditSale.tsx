@@ -25,6 +25,8 @@ import {
   Badge,
   Divider,
   Box,
+  Autocomplete,
+  Modal,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import { FaCopy, FaPlus } from "react-icons/fa";
@@ -34,7 +36,19 @@ import {
   MasterOrderSchema,
 } from "@/zod/salesOrder_Cabinets_Jobs.schema";
 import { ClientType } from "@/zod/client.schema";
-import { useJobBaseNumbers } from "@/hooks/useJobBaseNumbers";
+import {
+  DeliveryTypeOptions,
+  DoorStyleOptions,
+  DrawerBoxOptions,
+  DrawerHardwareOptions,
+  FinishOptions,
+  flooringClearanceOptions,
+  flooringTypeOptions,
+  InteriorOptions,
+  OrderTypeOptions,
+  TopDrawerFrontOptions,
+} from "@/dropdowns/dropdownOptions";
+import { useDisclosure } from "@mantine/hooks";
 
 type EditSaleProps = {
   salesOrderId: number;
@@ -50,12 +64,54 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
   const { user } = useUser();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [speciesSearch, setSpeciesSearch] = useState("");
+  const [colorSearch, setColorSearch] = useState("");
+  const [newItemValue, setNewItemValue] = useState("");
 
+  const [
+    speciesModalOpened,
+    { open: openSpeciesModal, close: closeSpeciesModal },
+  ] = useDisclosure(false);
+  const [colorModalOpened, { open: openColorModal, close: closeColorModal }] =
+    useDisclosure(false);
   const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
 
   const [selectedClientData, setSelectedClientData] =
     useState<ClientType | null>(null);
+  // --- Fetch Colors and Species ---
+  const { data: colorsData } = useQuery({
+    queryKey: ["colors-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("colors")
+        .select("Name")
+        .order("Name");
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAuthenticated,
+  });
 
+  const { data: speciesData } = useQuery({
+    queryKey: ["species-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("species")
+        .select("Species")
+        .order("Species");
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAuthenticated,
+  });
+
+  const colorOptions = useMemo(() => {
+    return (colorsData || []).map((c: any) => c.Name);
+  }, [colorsData]);
+
+  const speciesOptions = useMemo(() => {
+    return (speciesData || []).map((s: any) => s.Species);
+  }, [speciesData]);
   // Fetch sales order data
   const { data: salesOrderData, isLoading: salesOrderLoading } = useQuery({
     queryKey: ["sales-order", salesOrderId],
@@ -96,7 +152,55 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
       original: c,
     }));
   }, [clientsData]);
+  const addSpeciesMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const { error } = await supabase
+        .from("species")
+        .insert({ Species: name });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      notifications.show({
+        title: "Success",
+        message: "Species added",
+        color: "green",
+      });
+      queryClient.invalidateQueries({ queryKey: ["species-list"] });
+      form.setFieldValue("cabinet.species", newItemValue);
+      closeSpeciesModal();
+      setNewItemValue("");
+    },
+    onError: (err: any) =>
+      notifications.show({
+        title: "Error",
+        message: err.message,
+        color: "red",
+      }),
+  });
 
+  const addColorMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const { error } = await supabase.from("colors").insert({ Name: name });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      notifications.show({
+        title: "Success",
+        message: "Color added",
+        color: "green",
+      });
+      queryClient.invalidateQueries({ queryKey: ["colors-list"] });
+      form.setFieldValue("cabinet.color", newItemValue);
+      closeColorModal();
+      setNewItemValue("");
+    },
+    onError: (err: any) =>
+      notifications.show({
+        title: "Error",
+        message: err.message,
+        color: "red",
+      }),
+  });
   // Form initialization
   const form = useForm<MasterOrderInput>({
     initialValues: {
@@ -609,42 +713,108 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                   bg={"gray.2"}
                 >
                   <SimpleGrid cols={3}>
-                    <TextInput
+                    <Select
                       label="Species"
+                      placeholder="Select Species"
+                      data={speciesOptions}
+                      searchable
+                      searchValue={speciesSearch}
+                      onSearchChange={setSpeciesSearch}
+                      nothingFoundMessage={
+                        speciesSearch.trim().length > 0 && (
+                          <Button
+                            fullWidth
+                            variant="light"
+                            size="xs"
+                            onClick={() => {
+                              setNewItemValue(speciesSearch);
+                              openSpeciesModal();
+                            }}
+                          >
+                            + Add "{speciesSearch}"
+                          </Button>
+                        )
+                      }
                       {...form.getInputProps(`cabinet.species`)}
                     />
-                    <TextInput
+
+                    {/* 4. UPDATE: Color Select */}
+                    <Select
                       label="Color"
+                      placeholder="Select Color"
+                      data={colorOptions}
+                      searchable
+                      searchValue={colorSearch}
+                      onSearchChange={setColorSearch}
+                      nothingFoundMessage={
+                        colorSearch.trim().length > 0 && (
+                          <Button
+                            fullWidth
+                            variant="light"
+                            size="xs"
+                            onClick={() => {
+                              setNewItemValue(colorSearch);
+                              openColorModal();
+                            }}
+                          >
+                            + Add "{colorSearch}"
+                          </Button>
+                        )
+                      }
                       {...form.getInputProps(`cabinet.color`)}
                     />
-                    <TextInput
+                    <Select
                       label="Door Style"
+                      placeholder="Almond, Birch, ..."
+                      data={DoorStyleOptions}
+                      searchable
+                      nothingFoundMessage="No door style found"
                       {...form.getInputProps(`cabinet.door_style`)}
                     />
-                    <TextInput
+                    <Select
                       label="Finish"
+                      placeholder="Almond, Birch, ..."
+                      data={FinishOptions}
+                      searchable
+                      nothingFoundMessage="No finish found"
                       {...form.getInputProps(`cabinet.finish`)}
                     />
-                    <TextInput
+                    <Select
                       label="Glaze"
                       {...form.getInputProps(`cabinet.glaze`)}
                     />
-                    <TextInput
+                    <Select
                       label="Top Drawer Front"
+                      placeholder="Almond, Birch, ..."
+                      data={TopDrawerFrontOptions}
+                      searchable
+                      nothingFoundMessage="No top drawer front found"
                       {...form.getInputProps(`cabinet.top_drawer_front`)}
                     />
                   </SimpleGrid>
                   <SimpleGrid cols={3} mt="sm">
-                    <TextInput
+                    <Select
                       label="Interior"
+                      placeholder="Almond, Birch, ..."
+                      data={InteriorOptions}
+                      searchable
+                      nothingFoundMessage="No interior found"
                       {...form.getInputProps(`cabinet.interior`)}
                     />
-                    <TextInput
+                    <Select
                       label="Drawer Box"
+                      placeholder="Std, Dbl Wall, Metal Box, MPL Dove, Birch F/J..."
+                      data={DrawerBoxOptions}
+                      searchable
+                      nothingFoundMessage="No drawer box found"
                       {...form.getInputProps(`cabinet.drawer_box`)}
                     />
-                    <TextInput
+                    <Select
                       label="Drawer Hardware"
+                      placeholder="Std, Dbl Wall, Metal Box, SC Under, F/X Side..."
+                      data={DrawerHardwareOptions}
+                      searchable
+                      nothingFoundMessage="No drawer hardware found"
                       {...form.getInputProps(`cabinet.drawer_hardware`)}
                     />
                   </SimpleGrid>
@@ -666,6 +836,9 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                     <Switch
                       label="Hinge Soft Close"
                       color="green"
+                      style={{
+                        display: "inline-flex",
+                      }}
                       {...form.getInputProps(`cabinet.hinge_soft_close`, {
                         type: "checkbox",
                       })}
@@ -673,6 +846,9 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                     <Switch
                       label="Doors / Parts Only"
                       color="green"
+                      style={{
+                        display: "inline-flex",
+                      }}
                       {...form.getInputProps(`cabinet.doors_parts_only`, {
                         type: "checkbox",
                       })}
@@ -682,6 +858,9 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                     <Switch
                       label="Handles Supplied"
                       color="green"
+                      style={{
+                        display: "inline-flex",
+                      }}
                       {...form.getInputProps(`cabinet.handles_supplied`, {
                         type: "checkbox",
                       })}
@@ -689,6 +868,9 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                     <Switch
                       label="Handles Selected"
                       color="green"
+                      style={{
+                        display: "inline-flex",
+                      }}
                       {...form.getInputProps(`cabinet.handles_selected`, {
                         type: "checkbox",
                       })}
@@ -697,6 +879,9 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                   <Switch
                     label="Glass Included"
                     color="green"
+                    style={{
+                      display: "inline-flex",
+                    }}
                     mt="sm"
                     {...form.getInputProps(`cabinet.glass`, {
                       type: "checkbox",
@@ -719,6 +904,9 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                   <Switch
                     label="Install Required"
                     color="green"
+                    style={{
+                      display: "inline-flex",
+                    }}
                     {...form.getInputProps("install", { type: "checkbox" })}
                     mt="sm"
                   />
@@ -767,15 +955,17 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                     />
                   </SimpleGrid>
 
-                  <TextInput
+                  <Autocomplete
                     label="Flooring Type"
+                    placeholder="Hardwood, Tile, etc."
+                    data={flooringTypeOptions}
                     {...form.getInputProps(`checklist.flooring_type`)}
-                    mt="sm"
                   />
-                  <TextInput
+                  <Autocomplete
                     label="Flooring Clearance"
+                    placeholder="3/8, 1/2, etc."
+                    data={flooringClearanceOptions}
                     {...form.getInputProps(`checklist.flooring_clearance`)}
-                    mt="sm"
                   />
                 </Fieldset>
 
@@ -785,12 +975,20 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                   bg={"gray.2"}
                   mt="md"
                 >
-                  <TextInput
+                  <Select
                     label="Order Type"
+                    placeholder="Single Fam, Multi Fam, Reno..."
+                    data={OrderTypeOptions}
+                    searchable
+                    nothingFoundMessage="No order type found"
                     {...form.getInputProps("order_type")}
                   />
-                  <TextInput
+                  <Select
                     label="Delivery Type"
+                    placeholder="Pickup, Delivery..."
+                    data={DeliveryTypeOptions}
+                    searchable
+                    nothingFoundMessage="No delivery type found"
                     {...form.getInputProps("delivery_type")}
                     mt="sm"
                   />
@@ -843,6 +1041,59 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
           </Paper>
         </Stack>
       </form>
+      <Modal
+        opened={speciesModalOpened}
+        onClose={closeSpeciesModal}
+        title="Add New Species"
+        centered
+      >
+        <Stack>
+          <TextInput
+            label="Species Name"
+            value={newItemValue}
+            onChange={(e) => setNewItemValue(e.target.value)}
+            data-autofocus
+          />
+          <Group justify="flex-end">
+            <Button variant="default" onClick={closeSpeciesModal}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => addSpeciesMutation.mutate(newItemValue)}
+              loading={addSpeciesMutation.isPending}
+            >
+              Save Species
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      <Modal
+        opened={colorModalOpened}
+        onClose={closeColorModal}
+        title="Add New Color"
+        centered
+      >
+        <Stack>
+          <TextInput
+            label="Color Name"
+            value={newItemValue}
+            onChange={(e) => setNewItemValue(e.target.value)}
+            data-autofocus
+          />
+          <Group justify="flex-end">
+            <Button variant="default" onClick={closeColorModal}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => addColorMutation.mutate(newItemValue)}
+              loading={addColorMutation.isPending}
+            >
+              Save Color
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Container>
   );
 }

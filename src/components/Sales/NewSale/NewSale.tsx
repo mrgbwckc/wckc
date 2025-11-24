@@ -26,6 +26,8 @@ import {
   Divider,
   Box,
   Title,
+  Autocomplete,
+  Modal,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import { FaPlus, FaCopy, FaCheckCircle } from "react-icons/fa";
@@ -37,6 +39,19 @@ import {
 import { ClientType } from "@/zod/client.schema";
 import AddClient from "@/components/Clients/AddClient/AddClient";
 import { useJobBaseNumbers } from "@/hooks/useJobBaseNumbers";
+import {
+  DeliveryTypeOptions,
+  DoorStyleOptions,
+  DrawerBoxOptions,
+  DrawerHardwareOptions,
+  FinishOptions,
+  flooringClearanceOptions,
+  flooringTypeOptions,
+  InteriorOptions,
+  OrderTypeOptions,
+  TopDrawerFrontOptions,
+} from "@/dropdowns/dropdownOptions";
+import { useDisclosure } from "@mantine/hooks";
 
 export default function NewSale() {
   const { supabase, isAuthenticated } = useSupabase();
@@ -57,6 +72,16 @@ export default function NewSale() {
   const [parentBaseSelection, setParentBaseSelection] = useState<string | null>(
     null
   );
+  const [speciesSearch, setSpeciesSearch] = useState("");
+  const [colorSearch, setColorSearch] = useState("");
+  const [newItemValue, setNewItemValue] = useState(""); // Shared input state for the modal
+
+  const [
+    speciesModalOpened,
+    { open: openSpeciesModal, close: closeSpeciesModal },
+  ] = useDisclosure(false);
+  const [colorModalOpened, { open: openColorModal, close: closeColorModal }] =
+    useDisclosure(false);
 
   const {
     data: clientsData,
@@ -101,7 +126,89 @@ export default function NewSale() {
       };
     });
   }, [clientsData]);
+  // --- Fetch Colors and Species ---
+  const { data: colorsData } = useQuery({
+    queryKey: ["colors-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("colors")
+        .select("Name")
+        .order("Name");
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAuthenticated,
+  });
 
+  const { data: speciesData } = useQuery({
+    queryKey: ["species-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("species")
+        .select("Species")
+        .order("Species");
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAuthenticated,
+  });
+
+  const colorOptions = useMemo(() => {
+    return (colorsData || []).map((c: any) => c.Name);
+  }, [colorsData]);
+
+  const speciesOptions = useMemo(() => {
+    return (speciesData || []).map((s: any) => s.Species);
+  }, [speciesData]);
+  const addSpeciesMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const { error } = await supabase
+        .from("species")
+        .insert({ Species: name });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      notifications.show({
+        title: "Success",
+        message: "Species added",
+        color: "green",
+      });
+      queryClient.invalidateQueries({ queryKey: ["species-list"] });
+      form.setFieldValue("cabinet.species", newItemValue);
+      closeSpeciesModal();
+      setNewItemValue("");
+    },
+    onError: (err: any) =>
+      notifications.show({
+        title: "Error",
+        message: err.message,
+        color: "red",
+      }),
+  });
+
+  const addColorMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const { error } = await supabase.from("colors").insert({ Name: name });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      notifications.show({
+        title: "Success",
+        message: "Color added",
+        color: "green",
+      });
+      queryClient.invalidateQueries({ queryKey: ["colors-list"] });
+      form.setFieldValue("cabinet.color", newItemValue); // Auto-select the new item
+      closeColorModal();
+      setNewItemValue("");
+    },
+    onError: (err: any) =>
+      notifications.show({
+        title: "Error",
+        message: err.message,
+        color: "red",
+      }),
+  });
   const form = useForm<MasterOrderInput>({
     initialValues: {
       client_id: 0,
@@ -712,28 +819,83 @@ export default function NewSale() {
                 >
                   {/* Row 1: Core Aesthetics */}
                   <SimpleGrid cols={3}>
-                    <TextInput
+                    {/* 3. UPDATE: Species Select */}
+                    <Select
                       label="Species"
+                      placeholder="Select Species"
+                      data={speciesOptions}
+                      searchable
+                      searchValue={speciesSearch}
+                      onSearchChange={setSpeciesSearch}
+                      nothingFoundMessage={
+                        speciesSearch.trim().length > 0 && (
+                          <Button
+                            fullWidth
+                            variant="light"
+                            size="xs"
+                            onClick={() => {
+                              setNewItemValue(speciesSearch);
+                              openSpeciesModal();
+                            }}
+                          >
+                            + Add "{speciesSearch}"
+                          </Button>
+                        )
+                      }
                       {...form.getInputProps(`cabinet.species`)}
                     />
-                    <TextInput
+
+                    {/* 4. UPDATE: Color Select */}
+                    <Select
                       label="Color"
+                      placeholder="Select Color"
+                      data={colorOptions}
+                      searchable
+                      searchValue={colorSearch}
+                      onSearchChange={setColorSearch}
+                      nothingFoundMessage={
+                        colorSearch.trim().length > 0 && (
+                          <Button
+                            fullWidth
+                            variant="light"
+                            size="xs"
+                            onClick={() => {
+                              setNewItemValue(colorSearch);
+                              openColorModal();
+                            }}
+                          >
+                            + Add "{colorSearch}"
+                          </Button>
+                        )
+                      }
                       {...form.getInputProps(`cabinet.color`)}
                     />
-                    <TextInput
+                    <Select
                       label="Door Style"
+                      placeholder="Select Door Style"
+                      data={DoorStyleOptions}
+                      searchable
+                      nothingFoundMessage="No door style found"
                       {...form.getInputProps(`cabinet.door_style`)}
                     />
-                    <TextInput
+                    <Select
                       label="Finish"
+                      placeholder="Select Finish"
+                      data={FinishOptions}
+                      searchable
+                      nothingFoundMessage="No finish found"
                       {...form.getInputProps(`cabinet.finish`)}
                     />
                     <TextInput
                       label="Glaze"
                       {...form.getInputProps(`cabinet.glaze`)}
                     />
-                    <TextInput
+                    <Select
                       label="Top Drawer Front"
+                      placeholder="Select Top Drawer Front"
+                      data={TopDrawerFrontOptions}
+                      searchable
+                      nothingFoundMessage="No top drawer front found"
                       {...form.getInputProps(`cabinet.top_drawer_front`)}
                     />
                   </SimpleGrid>
@@ -744,16 +906,28 @@ export default function NewSale() {
                       label="Box"
                       {...form.getInputProps(`cabinet.box`)}
                     />
-                    <TextInput
+                    <Select
                       label="Interior Material"
+                      placeholder="Select Interior Material"
+                      data={InteriorOptions}
+                      searchable
+                      nothingFoundMessage="No interior material found"
                       {...form.getInputProps(`cabinet.interior`)}
                     />
-                    <TextInput
+                    <Select
                       label="Drawer Box"
+                      placeholder="Select Drawer Box"
+                      data={DrawerBoxOptions}
+                      searchable
+                      nothingFoundMessage="No drawer box found"
                       {...form.getInputProps(`cabinet.drawer_box`)}
                     />
-                    <TextInput
+                    <Select
                       label="Drawer Hardware"
+                      placeholder="Select Drawer Hardware"
+                      data={DrawerHardwareOptions}
+                      searchable
+                      nothingFoundMessage="No drawer hardware found"
                       {...form.getInputProps(`cabinet.drawer_hardware`)}
                     />
                   </SimpleGrid>
@@ -767,6 +941,9 @@ export default function NewSale() {
                       <Switch
                         label="Glass Doors Required"
                         color="#4a00e0"
+                        style={{
+                          display: "inline-flex",
+                        }}
                         {...form.getInputProps(`cabinet.glass`)}
                       />
                       <TextInput
@@ -782,6 +959,9 @@ export default function NewSale() {
                       <Switch
                         label="Doors/Parts Only Order"
                         color="#4a00e0"
+                        style={{
+                          display: "inline-flex",
+                        }}
                         {...form.getInputProps(`cabinet.doors_parts_only`)}
                       />
                       <TextInput
@@ -911,26 +1091,34 @@ export default function NewSale() {
                     {...form.getInputProps(`comments`)}
                   />
                   <SimpleGrid cols={2} mt="sm">
-                    <TextInput
+                    <Select
                       label="Order Type"
-                      placeholder="Kitchen, Vanity..."
+                      placeholder="Single Fam, Multi Fam, Reno..."
+                      data={OrderTypeOptions}
+                      searchable
+                      nothingFoundMessage="No order type found"
                       {...form.getInputProps(`order_type`)}
                     />
-                    <TextInput
+                    <Select
                       label="Delivery Type"
                       placeholder="Pickup, Delivery..."
+                      data={DeliveryTypeOptions}
+                      searchable
+                      nothingFoundMessage="No delivery type found"
                       {...form.getInputProps(`delivery_type`)}
                     />
                   </SimpleGrid>
                   <SimpleGrid cols={2} mt="sm">
-                    <TextInput
+                    <Autocomplete
                       label="Flooring Type"
                       placeholder="Hardwood, Tile, etc."
+                      data={flooringTypeOptions}
                       {...form.getInputProps(`checklist.flooring_type`)}
                     />
-                    <TextInput
+                    <Autocomplete
                       label="Flooring Clearance"
-                      placeholder="e.g., Yes, 1/2 inch gap"
+                      placeholder="3/8, 1/2, etc."
+                      data={flooringClearanceOptions}
                       {...form.getInputProps(`checklist.flooring_clearance`)}
                     />
                   </SimpleGrid>
@@ -938,7 +1126,10 @@ export default function NewSale() {
                     color="#4a00e0"
                     mt="md"
                     label="Installation Required"
-                    {...form.getInputProps(`install`)}
+                    style={{
+                      display: "inline-flex",
+                    }}
+                    {...form.getInputProps("install")}
                   />
                 </Fieldset>
               </Stack>
@@ -1098,6 +1289,62 @@ export default function NewSale() {
             </Paper>
           </Center>
         ))}
+
+      {/* Add Species Modal */}
+      <Modal
+        opened={speciesModalOpened}
+        onClose={closeSpeciesModal}
+        title="Add New Species"
+        centered
+      >
+        <Stack>
+          <TextInput
+            label="Species Name"
+            value={newItemValue}
+            onChange={(e) => setNewItemValue(e.target.value)}
+            data-autofocus
+          />
+          <Group justify="flex-end">
+            <Button variant="default" onClick={closeSpeciesModal}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => addSpeciesMutation.mutate(newItemValue)}
+              loading={addSpeciesMutation.isPending}
+            >
+              Save Species
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* Add Color Modal */}
+      <Modal
+        opened={colorModalOpened}
+        onClose={closeColorModal}
+        title="Add New Color"
+        centered
+      >
+        <Stack>
+          <TextInput
+            label="Color Name"
+            value={newItemValue}
+            onChange={(e) => setNewItemValue(e.target.value)}
+            data-autofocus
+          />
+          <Group justify="flex-end">
+            <Button variant="default" onClick={closeColorModal}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => addColorMutation.mutate(newItemValue)}
+              loading={addColorMutation.isPending}
+            >
+              Save Color
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Container>
   );
 }
