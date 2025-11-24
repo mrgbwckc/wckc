@@ -667,8 +667,8 @@ export default function EditServiceOrder({
                 <Table.Thead>
                   <Table.Tr>
                     <Table.Th w={80}>Qty</Table.Th>
-                    <Table.Th>Part Name</Table.Th>
-                    <Table.Th>Description</Table.Th>
+                    <Table.Th>Part</Table.Th>
+                    <Table.Th w={400}>Description</Table.Th>
                     <Table.Th w={50} />
                   </Table.Tr>
                 </Table.Thead>
