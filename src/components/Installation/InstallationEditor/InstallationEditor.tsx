@@ -782,7 +782,7 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                       >
                         {form.values.installation_completed
                           ? "Reset"
-                          : "Sign Off"}
+                          : "Complete"}
                       </Button>
                     </TimelineItem>
 
@@ -846,7 +846,7 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                       >
                         {form.values.inspection_completed
                           ? "Reset"
-                          : "Sign Off"}
+                          : "Complete"}
                       </Button>
                     </TimelineItem>
                   </Timeline>
