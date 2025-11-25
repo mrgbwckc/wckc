@@ -71,7 +71,7 @@ export default function NewServiceOrder() {
   const form = useForm<ServiceOrderFormValues>({
     initialValues: {
       job_id: "",
-      service_order_number: "", // Could be auto-generated logic here if preferred
+      service_order_number: "",
       due_date: null,
       installer_id: null,
       service_type: "",

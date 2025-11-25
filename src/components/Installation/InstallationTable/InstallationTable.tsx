@@ -212,7 +212,14 @@ export default function InstallationTable() {
       cell: (info) => {
         const shipped = info.getValue();
         return (
-          <Badge color={shipped ? "green" : "red"} variant="filled">
+          <Badge
+            variant="gradient"
+            gradient={
+              shipped
+                ? { from: "lime", to: "green", deg: 90 }
+                : { from: "red", to: "#ff2c2cff", deg: 90 }
+            }
+          >
             {shipped ? "YES" : "NO"}
           </Badge>
         );

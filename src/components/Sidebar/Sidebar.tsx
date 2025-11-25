@@ -18,6 +18,7 @@ import {
   FaShippingFast,
   FaTools,
   FaShoppingBag,
+  FaFileInvoice,
 } from "react-icons/fa";
 import { FaGears } from "react-icons/fa6";
 import { MdFactory } from "react-icons/md";
@@ -43,6 +44,7 @@ const iconMap: Record<string, any> = {
   MdFactory,
   GoTools,
   FaShoppingBag,
+  FaFileInvoice,
 };
 
 type MainLinkProps = SidebarLink & {

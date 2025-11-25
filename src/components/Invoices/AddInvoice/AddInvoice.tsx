@@ -1,0 +1,181 @@
+"use client";
+
+import { useEffect } from "react";
+import {
+  Modal,
+  Button,
+  Stack,
+  TextInput,
+  SimpleGrid,
+  Group,
+  Select,
+  Textarea,
+  Switch,
+  LoadingOverlay,
+} from "@mantine/core";
+import { DateInput } from "@mantine/dates";
+import { useForm } from "@mantine/form";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { notifications } from "@mantine/notifications";
+import { zodResolver } from "@/utils/zodResolver/zodResolver";
+import { InvoiceSchema, InvoiceFormInput } from "@/zod/invoice.schema";
+import { useSupabase } from "@/hooks/useSupabase";
+import { useJobs } from "@/hooks/useJobs";
+
+interface AddInvoiceProps {
+  opened: boolean;
+  onClose: () => void;
+}
+
+export default function AddInvoice({ opened, onClose }: AddInvoiceProps) {
+  const { supabase, isAuthenticated } = useSupabase();
+  const queryClient = useQueryClient();
+
+  // 1. Fetch Jobs for the Dropdown
+  const { data: jobOptions, isLoading: jobsLoading } = useJobs(isAuthenticated);
+
+  // 2. Form Setup
+  const form = useForm<InvoiceFormInput>({
+    initialValues: {
+      invoice_number: "",
+      job_id: "",
+      date_entered: new Date(), // Default to today
+      date_due: null,
+      paid_at: null,
+      no_charge: false,
+      comments: "",
+    },
+    validate: zodResolver(InvoiceSchema),
+  });
+
+  // 3. Reset form when modal opens
+  useEffect(() => {
+    if (opened) {
+      form.reset();
+      form.setFieldValue("date_entered", new Date());
+    }
+  }, [opened]);
+
+  // 4. Create Mutation
+  const createMutation = useMutation({
+    mutationFn: async (values: InvoiceFormInput) => {
+      // Zod has already validated and transformed job_id to a number
+      const { error } = await supabase.from("invoices").insert(values);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      notifications.show({
+        title: "Success",
+        message: "Invoice created successfully",
+        color: "green",
+      });
+      queryClient.invalidateQueries({ queryKey: ["invoices_list"] });
+      onClose();
+    },
+    onError: (error: any) => {
+      notifications.show({
+        title: "Error",
+        message: error.message,
+        color: "red",
+      });
+    },
+  });
+
+  return (
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title="Add New Invoice"
+      size="lg"
+      centered
+    >
+      <LoadingOverlay visible={createMutation.isPending || jobsLoading} />
+
+      <form
+        onSubmit={form.onSubmit((values) =>
+          createMutation.mutate(values as InvoiceFormInput)
+        )}
+      >
+        <Stack gap="md">
+          <SimpleGrid cols={2}>
+            <TextInput
+              label="Invoice Number"
+              placeholder="e.g. 27000..."
+              withAsterisk
+              data-autofocus
+              {...form.getInputProps("invoice_number")}
+            />
+
+            <Select
+              label="Link to Job"
+              placeholder="Search Job Number"
+              data={jobOptions || []}
+              searchable
+              withAsterisk
+              {...form.getInputProps("job_id")}
+            />
+          </SimpleGrid>
+
+          <SimpleGrid cols={2}>
+            <DateInput
+              label="Date Entered"
+              placeholder="YYYY-MM-DD"
+              valueFormat="YYYY-MM-DD"
+              clearable
+              {...form.getInputProps("date_entered")}
+            />
+            <DateInput
+              label="Date Due"
+              placeholder="YYYY-MM-DD"
+              valueFormat="YYYY-MM-DD"
+              clearable
+              minDate={
+                form.values.date_entered instanceof Date
+                  ? form.values.date_entered
+                  : undefined
+              }
+              {...form.getInputProps("date_due")}
+            />
+          </SimpleGrid>
+
+          <Switch
+            label="No Charge"
+            color="#8400ffff"
+            styles={{
+              track: {
+                cursor: "pointer",
+              },
+            }}
+            checked={form.values.no_charge || false}
+            onChange={(event) =>
+              form.setFieldValue("no_charge", event.currentTarget.checked)
+            }
+          />
+
+          <Textarea
+            label="Comments"
+            placeholder="Additional notes..."
+            minRows={3}
+            {...form.getInputProps("comments")}
+          />
+
+          <Group justify="flex-end" mt="md">
+            <Button variant="default" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              loading={createMutation.isPending}
+              style={{
+                background: "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
+              }}
+            >
+              Create Invoice
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    </Modal>
+  );
+}
