@@ -50,6 +50,8 @@ import {
 import { useJobs } from "@/hooks/useJobs";
 import CustomRichTextEditor from "@/components/RichTextEditor/RichTextEditor";
 import PdfPreview from "../PdfPreview/PdfPreview";
+import CabinetSpecs from "@/components/Shared/CabinetSpecs/CabinetSpecs";
+import ClientInfo from "@/components/Shared/ClientInfo/ClientInfo";
 
 interface EditServiceOrderProps {
   serviceOrderId: string;
@@ -295,6 +297,9 @@ export default function EditServiceOrder({
       </Center>
     );
   }
+  const client = serviceOrderData?.jobs?.sales_orders?.client;
+  const cabinet = serviceOrderData?.jobs?.sales_orders?.cabinet;
+  const shipping = serviceOrderData?.jobs?.sales_orders;
 
   return (
     <Container
@@ -363,174 +368,9 @@ export default function EditServiceOrder({
             {/* ... (Client Info and Cabinet Specs Sections - SAME AS BEFORE) ... */}
             <SimpleGrid cols={2}>
               {/* CLIENT INFO */}
-              <Paper
-                p="md"
-                radius="md"
-                shadow="xs"
-                style={{ background: "#ffffffff" }}
-              >
-                <Text
-                  fw={600}
-                  size="lg"
-                  mb="md"
-                  c="#4A00E0"
-                  style={{ display: "flex", alignItems: "center" }}
-                >
-                  <FaUser style={{ marginRight: 8 }} /> Client Details
-                </Text>
-                <Stack gap={3}>
-                  <Text size="sm">
-                    <strong>Client:</strong>{" "}
-                    {serviceOrderData?.jobs?.sales_orders?.client?.lastName ||
-                      "—"}
-                  </Text>
-                  <Text size="sm">
-                    <strong>Phone 1:</strong>{" "}
-                    {serviceOrderData?.jobs?.sales_orders?.client?.phone1 ||
-                      "—"}
-                  </Text>
-                  <Text size="sm">
-                    <strong>Phone 2:</strong>{" "}
-                    {serviceOrderData?.jobs?.sales_orders?.client?.phone2 ||
-                      "—"}
-                  </Text>
-                  <Text size="sm">
-                    <strong>Email 1:</strong>{" "}
-                    {serviceOrderData?.jobs?.sales_orders?.client?.email1 ||
-                      "—"}
-                  </Text>
-                  <Text size="sm">
-                    <strong>Email 2:</strong>{" "}
-                    {serviceOrderData?.jobs?.sales_orders?.client?.email2 ||
-                      "—"}
-                  </Text>
-                </Stack>
-              </Paper>
+              {client && <ClientInfo client={client} shipping={shipping} />}
 
-              {/* CABINET SPECS */}
-              <Paper
-                p="md"
-                radius="md"
-                shadow="xs"
-                style={{ background: "#ffffffff" }}
-              >
-                <Text
-                  fw={600}
-                  size="lg"
-                  mb="md"
-                  c="#4A00E0"
-                  style={{ display: "flex", alignItems: "center" }}
-                >
-                  <MdOutlineDoorSliding style={{ marginRight: 8 }} /> Cabinet
-                  Specs
-                </Text>
-
-                <Grid>
-                  <Grid.Col span={6}>
-                    <Text size="sm">
-                      <strong>Box:</strong>{" "}
-                      {serviceOrderData?.jobs?.sales_orders?.cabinet?.box ||
-                        "—"}
-                    </Text>
-                    <Text size="sm">
-                      <strong>Color:</strong>{" "}
-                      {serviceOrderData?.jobs?.sales_orders?.cabinet?.color ||
-                        "—"}
-                    </Text>
-                    <Text size="sm">
-                      <strong>Finish:</strong>{" "}
-                      {serviceOrderData?.jobs?.sales_orders?.cabinet?.finish ||
-                        "—"}
-                    </Text>
-                    <Text size="sm">
-                      <strong>Species:</strong>{" "}
-                      {serviceOrderData?.jobs?.sales_orders?.cabinet?.species ||
-                        "—"}
-                    </Text>
-                    <Text size="sm">
-                      <strong>Interior:</strong>{" "}
-                      {serviceOrderData?.jobs?.sales_orders?.cabinet
-                        ?.interior || "—"}
-                    </Text>
-                    <Text size="sm">
-                      <strong>Piece Count:</strong>{" "}
-                      {serviceOrderData?.jobs?.sales_orders?.cabinet
-                        ?.piece_count || "—"}
-                    </Text>
-                  </Grid.Col>
-                  <Grid.Col span={6}>
-                    <Text
-                      size="sm"
-                      style={{ display: "flex", alignItems: "center" }}
-                    >
-                      <strong>Glass:</strong>{" "}
-                      {serviceOrderData?.jobs?.sales_orders?.cabinet?.glass && (
-                        <FaCheck
-                          color="#8e2de2"
-                          size={12}
-                          style={{ marginLeft: 10 }}
-                        />
-                      )}
-                    </Text>
-                    <Text
-                      size="sm"
-                      style={{ display: "flex", alignItems: "center" }}
-                    >
-                      <strong>Doors Parts Only:</strong>{" "}
-                      {serviceOrderData?.jobs?.sales_orders?.cabinet
-                        ?.doors_parts_only && (
-                        <FaCheck
-                          color="#8e2de2"
-                          size={12}
-                          style={{ marginLeft: 10 }}
-                        />
-                      )}
-                    </Text>
-                    <Text
-                      size="sm"
-                      style={{ display: "flex", alignItems: "center" }}
-                    >
-                      <strong>Handles Selected:</strong>{" "}
-                      {serviceOrderData?.jobs?.sales_orders?.cabinet
-                        ?.handles_selected && (
-                        <FaCheck
-                          color="#8e2de2"
-                          size={12}
-                          style={{ marginLeft: 10 }}
-                        />
-                      )}
-                    </Text>
-                    <Text
-                      size="sm"
-                      style={{ display: "flex", alignItems: "center" }}
-                    >
-                      <strong>Handles Supplied:</strong>{" "}
-                      {serviceOrderData?.jobs?.sales_orders?.cabinet
-                        ?.handles_supplied && (
-                        <FaCheck
-                          color="#8e2de2"
-                          size={12}
-                          style={{ marginLeft: 10 }}
-                        />
-                      )}
-                    </Text>
-                    <Text
-                      size="sm"
-                      style={{ display: "flex", alignItems: "center" }}
-                    >
-                      <strong>Hinge Soft Close:</strong>{" "}
-                      {serviceOrderData?.jobs?.sales_orders?.cabinet
-                        ?.hinge_soft_close && (
-                        <FaCheck
-                          color="#8e2de2"
-                          size={12}
-                          style={{ marginLeft: 10 }}
-                        />
-                      )}
-                    </Text>
-                  </Grid.Col>
-                </Grid>
-              </Paper>
+              {cabinet && <CabinetSpecs cabinet={cabinet} />}
             </SimpleGrid>
           </Paper>
 

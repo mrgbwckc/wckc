@@ -4,8 +4,8 @@ import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@mantine/form";
-import { zodResolver } from "@/utils/zodResolver/zodResolver";
 import { useSupabase } from "@/hooks/useSupabase";
+import { Tables, TablesUpdate } from "@/types/db";
 import {
   Container,
   Paper,
@@ -44,102 +44,35 @@ import {
 } from "react-icons/fa";
 import { MdOutlineDoorSliding } from "react-icons/md";
 
-import z from "zod";
+import CabinetSpecs from "@/components/Shared/CabinetSpecs/CabinetSpecs";
+import ClientInfo from "@/components/Shared/ClientInfo/ClientInfo";
 
-// --- Nested Types & Schema Definition ---
-const installationSchema = z.object({
-  installation_id: z.number().optional(),
-  installer_id: z.number().nullable(),
-  installation_notes: z.string().nullable(),
-  wrap_date: z.coerce.date().nullable(),
-  has_shipped: z.boolean(),
-  installation_date: z.coerce.date().nullable(),
-  installation_completed: z.string().nullable(), // ISO String timestamp for completion
-  inspection_date: z.coerce.date().nullable(),
-  inspection_completed: z.string().nullable(), // ISO String timestamp for inspection sign-off
-  legacy_ref: z.string().nullable(),
-});
-type InstallationType = z.infer<typeof installationSchema>;
+// --- Type Definitions using Supabase Types ---
+type InstallationType = Tables<"installation">;
+type ProductionScheduleType = Tables<"production_schedule">;
 
-// We only need specific fields from Production Schedule for context/scheduling now
-type ProductionScheduleType = {
+// Combined form values for Installation + Production Schedule shipping fields
+// Override date fields to use Date objects for form compatibility
+type CombinedInstallFormValues = Omit<
+  TablesUpdate<"installation">,
+  "wrap_date" | "installation_date" | "inspection_date"
+> & {
+  wrap_date: Date | null;
+  installation_date: Date | null;
+  inspection_date: Date | null;
   prod_id: number;
-  rush: boolean;
-  placement_date: string | null;
-  doors_in_schedule: string | null;
-  doors_out_schedule: string | null;
-  cut_finish_schedule: string | null;
-  cut_melamine_schedule: string | null;
-  paint_in_schedule: string | null;
-  paint_out_schedule: string | null;
-  assembly_schedule: string | null;
-  ship_schedule: string | null;
+  ship_schedule: Date | null;
   ship_status: "unprocessed" | "tentative" | "confirmed";
-  // Actuals are no longer handled here
-  in_plant_actual: string | null;
-  doors_completed_actual: string | null;
-  cut_finish_completed_actual: string | null;
-  custom_finish_completed_actual: string | null;
-  drawer_completed_actual: string | null;
-  cut_melamine_completed_actual: string | null;
-  paint_completed_actual: string | null;
-  assembly_completed_actual: string | null;
 };
 
-// Extended schema only includes Shipping Schedule fields, not Actuals
-const combinedFormSchema = installationSchema.extend({
-  prod_id: z.number(),
-  ship_schedule: z.coerce.date().nullable(),
-  ship_status: z.enum(["unprocessed", "tentative", "confirmed"]),
-});
+type InstallerLookup = Tables<"installers">;
 
-type CombinedInstallFormValues = z.infer<typeof combinedFormSchema>;
-
-type InstallerLookup = {
-  installer_id: number;
-  company_name: string;
-  first_name: string;
-  last_name: string;
-};
-
-type CabinetSpecs = {
-  id: number;
-  box: string;
-  color: string;
-  glass: boolean;
-  glaze: string;
-  finish: string;
-  species: string;
-  interior: string;
-  door_style: string;
-  drawer_box: string;
-  glass_type: string;
-  piece_count: string;
-  doors_parts_only: boolean;
-  handles_selected: boolean;
-  handles_supplied: boolean;
-  hinge_soft_close: boolean;
-  top_drawer_front: string;
-};
-
-type JobData = {
-  id: number;
-  job_number: string;
-  installation: (InstallationType & { installation_id: number }) | null;
+type JobData = Tables<"jobs"> & {
+  installation: InstallationType | null;
   production_schedule: ProductionScheduleType | null;
-  sales_orders: {
-    shipping_street: string;
-    shipping_city: string;
-    shipping_province: string;
-    shipping_zip: string;
-    client: {
-      lastName: string;
-      phone1: string;
-      phone2?: string;
-      email1: string;
-      email2?: string;
-    };
-    cabinet: CabinetSpecs;
+  sales_orders: Tables<"sales_orders"> & {
+    client: Tables<"client"> | null;
+    cabinet: Tables<"cabinets"> | null;
   };
 };
 
@@ -221,10 +154,10 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
   // --- 3. Form Initialization ---
   const form = useForm<CombinedInstallFormValues>({
     initialValues: {
-      installation_id: undefined,
       installer_id: null,
       installation_notes: "",
       wrap_date: null,
+      wrap_completed: null,
       has_shipped: false,
       installation_date: null,
       installation_completed: null,
@@ -237,7 +170,6 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
       ship_schedule: null,
       ship_status: "unprocessed",
     },
-    validate: zodResolver(combinedFormSchema),
   });
 
   // Prefill form when data is loaded
@@ -248,7 +180,6 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
 
       if (install) {
         form.setValues({
-          installation_id: install.installation_id,
           installer_id: install.installer_id,
           installation_notes: install.installation_notes ?? "",
           wrap_date: install.wrap_date
@@ -545,160 +476,10 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                 {/* DETAILED INFO: CLIENT, SHIPPING, CABINET */}
                 <SimpleGrid cols={3}>
                   {/* CLIENT & CONTACTS */}
-                  <Paper
-                    p="md"
-                    radius="md"
-                    shadow="xs"
-                    style={{ background: "#ffffffff" }}
-                  >
-                    <Text
-                      fw={600}
-                      size="lg"
-                      mb="md"
-                      c="#4A00E0"
-                      style={{ display: "flex", alignItems: "center" }}
-                    >
-                      <FaUser style={{ marginRight: 8 }} /> Client Details
-                    </Text>
-                    <Stack gap={3}>
-                      <Text size="sm">
-                        <strong>Client:</strong> {client?.lastName || "—"}
-                      </Text>
-                      <Text size="sm">
-                        <strong>Phone 1:</strong> {client?.phone1 || "—"}
-                      </Text>
-                      <Text size="sm">
-                        <strong>Phone 2:</strong> {client?.phone2 || "—"}
-                      </Text>
-                      <Text size="sm">
-                        <strong>Email 1:</strong> {client?.email1 || "—"}
-                      </Text>
-                      <Text size="sm">
-                        <strong>Email 2:</strong> {client?.email2 || "—"}
-                      </Text>
-                      <Text size="sm">
-                        <strong>Address:</strong>{" "}
-                        {[
-                          shipping?.shipping_street,
-                          shipping?.shipping_city,
-                          shipping?.shipping_province,
-                          shipping?.shipping_zip,
-                        ]
-                          .filter(Boolean)
-                          .join(", ") || "—"}
-                      </Text>
-                    </Stack>
-                  </Paper>
+                  <ClientInfo client={client} shipping={shipping} />
 
                   {/* CABINET SPECS */}
-                  <Paper
-                    p="md"
-                    radius="md"
-                    shadow="xs"
-                    style={{ background: "#ffffffff" }}
-                  >
-                    <Text
-                      fw={600}
-                      size="lg"
-                      mb="md"
-                      c="#4A00E0"
-                      style={{ display: "flex", alignItems: "center" }}
-                    >
-                      <MdOutlineDoorSliding style={{ marginRight: 8 }} />{" "}
-                      Cabinet Specs
-                    </Text>
-
-                    <Grid>
-                      <Grid.Col span={6}>
-                        <Text size="sm">
-                          <strong>Box:</strong> {cabinet?.box || "—"}
-                        </Text>
-                        <Text size="sm">
-                          <strong>Color:</strong> {cabinet?.color || "—"}
-                        </Text>
-                        <Text size="sm">
-                          <strong>Finish:</strong> {cabinet?.finish || "—"}
-                        </Text>
-                        <Text size="sm">
-                          <strong>Species:</strong> {cabinet?.species || "—"}
-                        </Text>
-                        <Text size="sm">
-                          <strong>Interior:</strong> {cabinet?.interior || "—"}
-                        </Text>
-                        <Text size="sm">
-                          <strong>Piece Count:</strong>{" "}
-                          {cabinet?.piece_count || "—"}
-                        </Text>
-                      </Grid.Col>
-                      <Grid.Col span={6}>
-                        <Text
-                          size="sm"
-                          style={{ display: "flex", alignItems: "center" }}
-                        >
-                          <strong>Glass:</strong>{" "}
-                          {cabinet?.glass && (
-                            <FaCheck
-                              color="#8e2de2"
-                              size={12}
-                              style={{ marginLeft: 10 }}
-                            />
-                          )}
-                        </Text>
-                        <Text
-                          size="sm"
-                          style={{ display: "flex", alignItems: "center" }}
-                        >
-                          <strong>Doors Parts Only:</strong>{" "}
-                          {cabinet?.doors_parts_only && (
-                            <FaCheck
-                              color="#8e2de2"
-                              size={12}
-                              style={{ marginLeft: 10 }}
-                            />
-                          )}
-                        </Text>
-                        <Text
-                          size="sm"
-                          style={{ display: "flex", alignItems: "center" }}
-                        >
-                          <strong>Handles Selected:</strong>{" "}
-                          {cabinet?.handles_selected && (
-                            <FaCheck
-                              color="#8e2de2"
-                              size={12}
-                              style={{ marginLeft: 10 }}
-                            />
-                          )}
-                        </Text>
-                        <Text
-                          size="sm"
-                          style={{ display: "flex", alignItems: "center" }}
-                        >
-                          <strong>Handles Supplied:</strong>{" "}
-                          {cabinet?.handles_supplied && (
-                            <FaCheck
-                              color="#8e2de2"
-                              size={12}
-                              style={{ marginLeft: 10 }}
-                            />
-                          )}
-                        </Text>
-                        <Text
-                          size="sm"
-                          style={{ display: "flex", alignItems: "center" }}
-                        >
-                          <strong>Hinge Soft Close:</strong>{" "}
-                          {cabinet?.hinge_soft_close && (
-                            <FaCheck
-                              color="#8e2de2"
-                              size={12}
-                              style={{ marginLeft: 10 }}
-                            />
-                          )}
-                        </Text>
-                      </Grid.Col>
-                    </Grid>
-                  </Paper>
+                  <CabinetSpecs cabinet={cabinet} />
 
                   <Paper
                     p="md"

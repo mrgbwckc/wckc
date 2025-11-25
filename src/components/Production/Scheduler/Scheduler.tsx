@@ -42,6 +42,8 @@ import {
   FaShippingFast,
 } from "react-icons/fa";
 import { schedulingSchema } from "@/zod/prod.schema";
+import CabinetSpecs from "@/components/Shared/CabinetSpecs/CabinetSpecs";
+import ClientInfo from "@/components/Shared/ClientInfo/ClientInfo";
 
 // ---------- Types ----------
 
@@ -80,6 +82,10 @@ export default function EditProductionSchedulePage({
           production_schedule:production_schedule (*),
           sales_orders:sales_orders (
             id,
+            shipping_street,
+            shipping_city,
+            shipping_province,
+            shipping_zip,
             client:client (*),
             cabinet:cabinets (
         id,
@@ -296,157 +302,10 @@ export default function EditProductionSchedulePage({
                 {/* CLIENT & CABINET */}
                 <SimpleGrid cols={2}>
                   {client && (
-                    <Paper
-                      p="md"
-                      radius="md"
-                      shadow="sm"
-                      mb="md"
-                      style={{ background: "#f5f5f5" }}
-                    >
-                      <Text fw={600} mb="sm">
-                        Client Details
-                      </Text>
-                      <SimpleGrid cols={3} spacing="sm">
-                        {[
-                          ["Client Name", client.lastName],
-                          ["Street", client.street],
-                          ["City", client.city],
-                          ["Province", client.province],
-                          ["ZIP", client.zip],
-                          ["Phone 1", client.phone1],
-                          ["Phone 2", client.phone2],
-                          ["Email 1", client.email1],
-                          ["Email 2", client.email2],
-                        ].map(([label, val]) => (
-                          <Text key={label} size="sm">
-                            <strong>{label}:</strong> {val || "—"}
-                          </Text>
-                        ))}
-                      </SimpleGrid>
-                    </Paper>
+                    <ClientInfo client={client} shipping={data.sales_orders} />
                   )}
 
-                  {cabinet && (
-                    <Paper
-                      p="md"
-                      radius="md"
-                      shadow="sm"
-                      mb="md"
-                      style={{ background: "#f5f5f5" }}
-                    >
-                      <Text fw={600} mb="sm">
-                        Cabinet Details
-                      </Text>
-                      {/* --- General Cabinet Info --- */}
-
-                      <Grid>
-                        <Grid.Col span={8}>
-                          <Text size="sm">
-                            <strong>Box:</strong> {cabinet.box || "—"}
-                          </Text>
-                          <Text size="sm">
-                            <strong>Color:</strong> {cabinet.color || "—"}
-                          </Text>
-                          <Text size="sm">
-                            <strong>Finish:</strong> {cabinet.finish || "—"}
-                          </Text>
-                          <Text size="sm">
-                            <strong>Species:</strong> {cabinet.species || "—"}
-                          </Text>
-                          <Text size="sm">
-                            <strong>Interior:</strong> {cabinet.interior || "—"}
-                          </Text>
-                          <Text size="sm">
-                            <strong>Piece Count:</strong>{" "}
-                            {cabinet.piece_count || "—"}
-                          </Text>
-                          <Text size="sm">
-                            <strong>Glass Type:</strong>{" "}
-                            {cabinet.glass_type || "—"}
-                          </Text>
-                          <Text size="sm">
-                            <strong>Door Style:</strong>{" "}
-                            {cabinet.door_style || "—"}
-                          </Text>
-                          <Text size="sm">
-                            <strong>Top Drawer Front:</strong>{" "}
-                            {cabinet.top_drawer_front || "—"}
-                          </Text>
-                          <Text size="sm">
-                            <strong>Drawer Box:</strong>{" "}
-                            {cabinet.drawer_box || "—"}
-                          </Text>
-                        </Grid.Col>
-                        <Grid.Col span={4}>
-                          <Text
-                            size="sm"
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            <strong>Glass:</strong>{" "}
-                            {cabinet.glass && (
-                              <FaCheck color="#8e2de2" size={12} />
-                            )}
-                          </Text>
-                          <Text
-                            size="sm"
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            <strong>Doors Parts Only:</strong>{" "}
-                            {cabinet.doors_parts_only && (
-                              <FaCheck color="#8e2de2" size={12} />
-                            )}
-                          </Text>
-                          <Text
-                            size="sm"
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            <strong>Handles Selected:</strong>{" "}
-                            {cabinet.handles_selected && (
-                              <FaCheck color="#8e2de2" size={12} />
-                            )}
-                          </Text>
-                          <Text
-                            size="sm"
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            <strong>Handles Supplied:</strong>{" "}
-                            {cabinet.handles_supplied && (
-                              <FaCheck color="#8e2de2" size={12} />
-                            )}
-                          </Text>
-                          <Text
-                            size="sm"
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            <strong>Hinge Soft Close:</strong>{" "}
-                            {cabinet.hinge_soft_close && (
-                              <FaCheck color="#8e2de2" size={12} />
-                            )}
-                          </Text>
-                        </Grid.Col>
-                      </Grid>
-                    </Paper>
-                  )}
+                  {cabinet && <CabinetSpecs cabinet={cabinet} />}
                 </SimpleGrid>
               </Paper>
 
