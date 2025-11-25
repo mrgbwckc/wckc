@@ -16,16 +16,14 @@ import localFont from "next/font/local";
 import QueryProvider from "@/components/providers/QueryProvider";
 import ClerkTokenProvider from "@/providers/ClerkTokenProvider";
 import SupabaseProvider from "@/providers/SupabaseProvider";
-import Sidebar from "@/components/Sidebar/Sidebar";
+import Sidebar, { SidebarLink } from "@/components/Sidebar/Sidebar";
 import { usePathname } from "next/navigation";
+
 const Quicksand = localFont({
   src: "../../public/Fonts/Quicksand/Quicksand-Regular.ttf",
 });
-const dashboardLinks: {
-  iconName: string;
-  label: string;
-  path: string;
-}[] = [
+
+const dashboardLinks: SidebarLink[] = [
   { iconName: "FaHome", label: "Sales", path: "/dashboard" },
   { iconName: "FaGears", label: "Production", path: "/dashboard/production" },
   {
@@ -38,12 +36,22 @@ const dashboardLinks: {
     label: "Service Orders",
     path: "/dashboard/serviceorders",
   },
-
   { iconName: "FaUsers", label: "Clients", path: "/dashboard/clients" },
   {
     iconName: "MdFactory",
     label: "Plant",
-    path: "/dashboard/production/actuals/37",
+    links: [
+      {
+        iconName: "FaCalendarAlt",
+        label: "Wrap Schedule",
+        path: "/dashboard/plant",
+      },
+      {
+        iconName: "FaClipboardCheck",
+        label: "Prod Actuals",
+        path: "/dashboard/production/actuals/40",
+      },
+    ],
   },
   { iconName: "GoTools", label: "Installers", path: "/dashboard/installers" },
   {
@@ -53,6 +61,7 @@ const dashboardLinks: {
   },
   { iconName: "FaFileInvoice", label: "Invoices", path: "/dashboard/invoices" },
 ];
+
 export default function RootLayout({
   children,
 }: Readonly<{

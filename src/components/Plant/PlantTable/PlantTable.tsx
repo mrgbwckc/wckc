@@ -209,6 +209,21 @@ const JobDetailModal = ({
               Doors Done
             </Badge>
           )}
+          {prod?.cut_finish_completed_actual && (
+            <Badge color="green" variant="dot">
+              Panels Done
+            </Badge>
+          )}
+          {prod?.custom_finish_completed_actual && (
+            <Badge color="green" variant="dot">
+              Custom Finish Done
+            </Badge>
+          )}
+          {prod?.paint_completed_actual && (
+            <Badge color="green" variant="dot">
+              Paint Done
+            </Badge>
+          )}
           {prod?.assembly_completed_actual && (
             <Badge color="green" variant="dot">
               Assembly Done
@@ -590,7 +605,7 @@ export default function PlantTable() {
     >
       <Group justify="space-between" mb="md">
         <Text fw={700} size="xl">
-          Plant Schedule (Wrap)
+          Plant Wrap Schedule
         </Text>
       </Group>
 
@@ -772,7 +787,13 @@ export default function PlantTable() {
       </Box>
 
       {selectedJob && (
-        <JobDetailModal job={selectedJob} onClose={closeDetailModal} />
+        <JobDetailModal
+          job={selectedJob}
+          onClose={() => {
+            closeDetailModal();
+            setSelectedJob(null);
+          }}
+        />
       )}
     </Box>
   );

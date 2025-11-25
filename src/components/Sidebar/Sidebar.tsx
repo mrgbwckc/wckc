@@ -4,14 +4,15 @@ import { usePathname } from "next/navigation";
 import {
   Stack,
   Group,
-  Code,
   Text,
   rem,
   useMantineTheme,
   Box,
-  px,
+  Collapse,
+  UnstyledButton,
 } from "@mantine/core";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import {
   FaHome,
   FaUsers,
@@ -19,16 +20,20 @@ import {
   FaTools,
   FaShoppingBag,
   FaFileInvoice,
+  FaChevronRight,
+  FaCalendarAlt,
+  FaClipboardCheck,
 } from "react-icons/fa";
 import { FaGears } from "react-icons/fa6";
 import { MdFactory } from "react-icons/md";
 import { GoTools } from "react-icons/go";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 
-type SidebarLink = {
+export type SidebarLink = {
   iconName: string;
   label: string;
-  path: string;
+  path?: string;
+  links?: SidebarLink[];
 };
 
 type SidebarProps = {
@@ -45,36 +50,64 @@ const iconMap: Record<string, any> = {
   GoTools,
   FaShoppingBag,
   FaFileInvoice,
+  FaCalendarAlt,
+  FaClipboardCheck,
 };
 
-type MainLinkProps = SidebarLink & {
-  active: boolean;
-};
+function MainLink({ item }: { item: SidebarLink }) {
+  const pathname = usePathname();
+  const Icon = iconMap[item.iconName] || FaHome;
+  const hasLinks = Array.isArray(item.links);
 
-function MainLink({ iconName, label, path, active }: MainLinkProps) {
-  const Icon = iconMap[iconName] || FaHome;
+  // Determine active state
+  const isActive = item.path ? pathname === item.path : false;
 
-  return (
-    <Link href={path} style={{ textDecoration: "none" }}>
-      <Group
-        p="xs"
-        style={{
-          borderRadius: 6,
-          backgroundColor: active ? "rgba(255, 255, 255, 0.1)" : "transparent",
-          color: active ? "#fff" : "rgba(255, 255, 255, 0.7)",
-          cursor: "pointer",
-          transition: "all 0.3s",
-        }}
-        onMouseEnter={(e) => {
-          if (!active)
-            e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
-          if (!active) e.currentTarget.style.color = "#fff";
-        }}
-        onMouseLeave={(e) => {
-          if (!active) e.currentTarget.style.background = "transparent";
-          if (!active) e.currentTarget.style.color = "rgba(255, 255, 255, 0.7)";
-        }}
-      >
+  // FIX: Ensure this is strictly boolean by using '?? false'
+  const isChildActive = hasLinks
+    ? item.links?.some((link) => pathname === link.path) ?? false
+    : false;
+
+  // State for collapse
+  const [opened, setOpened] = useState(isChildActive);
+
+  // Auto-open if a child is active (on mount or path change)
+  useEffect(() => {
+    if (isChildActive) {
+      setOpened(true);
+    }
+  }, [isChildActive]);
+
+  const linkContent = (
+    <Group
+      justify="space-between"
+      p="xs"
+      style={{
+        borderRadius: 6,
+        backgroundColor:
+          isActive || (hasLinks && isChildActive)
+            ? "rgba(255, 255, 255, 0.1)"
+            : "transparent",
+        color:
+          isActive || (hasLinks && isChildActive)
+            ? "#fff"
+            : "rgba(255, 255, 255, 0.7)",
+        cursor: "pointer",
+        transition: "all 0.3s",
+      }}
+      onMouseEnter={(e) => {
+        if (!isActive && !isChildActive) {
+          e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+          e.currentTarget.style.color = "#fff";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isActive && !isChildActive) {
+          e.currentTarget.style.background = "transparent";
+          e.currentTarget.style.color = "rgba(255, 255, 255, 0.7)";
+        }
+      }}
+    >
+      <Group gap="xs">
         <Box
           style={{
             width: rem(18),
@@ -86,23 +119,67 @@ function MainLink({ iconName, label, path, active }: MainLinkProps) {
         >
           <Icon style={{ width: rem(18), height: rem(18) }} />
         </Box>
-
-        <Text size="sm" fw={active ? 600 : 400}>
-          {label}
+        <Text size="sm" fw={isActive || isChildActive ? 600 : 400}>
+          {item.label}
         </Text>
       </Group>
+      {hasLinks && (
+        <FaChevronRight
+          size={12}
+          style={{
+            transform: opened ? "rotate(90deg)" : "none",
+            transition: "transform 200ms ease",
+          }}
+        />
+      )}
+    </Group>
+  );
+
+  if (hasLinks) {
+    return (
+      <>
+        <UnstyledButton
+          onClick={() => setOpened((o) => !o)}
+          style={{ width: "100%", display: "block" }}
+        >
+          {linkContent}
+        </UnstyledButton>
+        <Collapse in={opened}>
+          <Stack
+            gap={2}
+            mt={2}
+            pl={10}
+            style={{
+              borderLeft: "1px solid rgba(255,255,255,0.1)",
+              marginLeft: rem(14),
+            }}
+          >
+            {item.links?.map((link) => (
+              <MainLink key={link.label} item={link} />
+            ))}
+          </Stack>
+        </Collapse>
+      </>
+    );
+  }
+
+  return (
+    <Link
+      href={item.path || "#"}
+      style={{ textDecoration: "none", display: "block" }}
+    >
+      {linkContent}
     </Link>
   );
 }
 
 export default function Sidebar({ links }: SidebarProps) {
-  const pathname = usePathname();
   const theme = useMantineTheme();
 
   return (
     <Box
       style={{
-        width: rem(200),
+        width: rem(220),
         height: "100vh",
         overflowY: "auto",
         background: "linear-gradient(180deg, #7b2ff7, #2b86c5)",
@@ -120,13 +197,9 @@ export default function Sidebar({ links }: SidebarProps) {
       </Group>
 
       {/* Links */}
-      <Stack style={{ flexGrow: 1 }}>
+      <Stack gap="xs" style={{ flexGrow: 1 }}>
         {links.map((link) => (
-          <MainLink
-            key={link.label}
-            {...link}
-            active={pathname === link.path}
-          />
+          <MainLink key={link.label} item={link} />
         ))}
       </Stack>
 
@@ -162,35 +235,28 @@ export default function Sidebar({ links }: SidebarProps) {
                 rootBox: {
                   width: "100%",
                 },
-
                 userButtonTrigger: {
-                  // THIS is the real clickable button ✔
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   width: "100%",
                   gap: "8px",
-
                   padding: "8px 12px",
                   borderRadius: "6px",
                   background:
                     "linear-gradient(135deg, #f0edff 0%, #e4dbff 100%)",
                   border: "1px solid #d3c9ff",
-
                   cursor: "pointer",
                   transition: "0.2s ease",
-
                   "&:hover": {
                     opacity: 0.9,
                   },
                 },
-
                 userButtonOuterIdentifier: {
                   color: "#4A00E0",
                   fontWeight: 600,
                   fontSize: "14px",
                 },
-
                 avatarBox: {
                   border: "2px solid #6C63FF",
                 },
