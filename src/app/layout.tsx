@@ -60,6 +60,17 @@ const dashboardLinks: SidebarLink[] = [
     path: "/dashboard/purchasing",
   },
   { iconName: "FaFileInvoice", label: "Invoices", path: "/dashboard/invoices" },
+  {
+    iconName: "FaClipboardCheck",
+    label: "Reports",
+    links: [
+      {
+        iconName: "FaTruckLoading",
+        label: "Shipping",
+        path: "/dashboard/reports/shippingreport",
+      },
+    ],
+  },
 ];
 
 export default function RootLayout({

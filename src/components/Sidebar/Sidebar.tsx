@@ -23,6 +23,7 @@ import {
   FaChevronRight,
   FaCalendarAlt,
   FaClipboardCheck,
+  FaTruckLoading,
 } from "react-icons/fa";
 import { FaGears } from "react-icons/fa6";
 import { MdFactory } from "react-icons/md";
@@ -52,6 +53,7 @@ const iconMap: Record<string, any> = {
   FaFileInvoice,
   FaCalendarAlt,
   FaClipboardCheck,
+  FaTruckLoading,
 };
 
 function MainLink({ item }: { item: SidebarLink }) {
