@@ -203,7 +203,7 @@ export default function InstallationTable() {
       minSize: 120,
       cell: (info) => {
         const date = info.getValue();
-        if (!date) return <Text c="dimmed">Pending</Text>;
+        if (!date) return <Text c="orange">TBD</Text>;
         return dayjs(date).format("YYYY-MM-DD");
       },
     }),
