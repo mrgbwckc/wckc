@@ -26,7 +26,7 @@ import {
   FaTruckLoading,
 } from "react-icons/fa";
 import { FaGears } from "react-icons/fa6";
-import { MdFactory } from "react-icons/md";
+import { MdFactory, MdSupervisorAccount } from "react-icons/md";
 import { GoTools } from "react-icons/go";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 
@@ -54,6 +54,7 @@ const iconMap: Record<string, any> = {
   FaCalendarAlt,
   FaClipboardCheck,
   FaTruckLoading,
+  MdSupervisorAccount,
 };
 
 function MainLink({ item }: { item: SidebarLink }) {

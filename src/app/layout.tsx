@@ -24,6 +24,11 @@ const Quicksand = localFont({
 });
 
 const dashboardLinks: SidebarLink[] = [
+  {
+    iconName: "MdSupervisorAccount",
+    label: "Overview",
+    path: "/dashboard/manager",
+  },
   { iconName: "FaHome", label: "Sales", path: "/dashboard" },
   { iconName: "FaGears", label: "Production", path: "/dashboard/production" },
   {
