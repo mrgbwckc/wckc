@@ -468,7 +468,10 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                 p="md"
                 radius="md"
                 shadow="sm"
-                style={{ background: "#f0f0f0ff" }}
+                mb="md"
+                style={{
+                  background: "linear-gradient(270deg, #ffffffff, #e9e5ffec)",
+                }}
               >
                 <Group justify="space-between" align="center">
                   <Text
@@ -542,7 +545,14 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
               </Paper>
             </Stack>
 
-            <Paper p="md" radius="md" pb={30}>
+            <Paper
+              p="md"
+              radius="md"
+              pb={30}
+              style={{
+                background: "linear-gradient(270deg, #ffffffff, #e9e5ffec)",
+              }}
+            >
               <Stack gap="xl">
                 {/* ---------------------------------------------------- */}
                 {/* 1. INSTALLER & SCHEDULE */}
@@ -676,190 +686,152 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
           </Grid.Col>
 
           {/* RIGHT COLUMN: STICKY SIDEBAR FOR STATUS */}
-          <Grid.Col span={2}>
+          <Grid.Col span={2} style={{ borderLeft: "1px solid #ccc" }}>
             <Box pt="md" pos="sticky" style={{ justifyItems: "center" }}>
-              <Stack gap="xl">
-                <Text
-                  fw={600}
-                  size="lg"
-                  c="violet"
-                  style={{ display: "flex", alignItems: "center" }}
+              {/* INSTALLATION PHASE TIMELINE */}
+              <Text
+                fw={600}
+                size="lg"
+                mb="md"
+                c="violet"
+                display={"flex"}
+                style={{ alignItems: "center" }}
+              >
+                <FaTools size={14} style={{ marginRight: "4px" }} />
+                Installation Phase
+              </Text>
+              <Paper shadow="sm" p="md" radius="md" w={"100%"}>
+                <Timeline
+                  bulletSize={24}
+                  lineWidth={2}
+                  active={-1}
+                  styles={{ root: { "--tl-color": "green" } }}
                 >
-                  <FaCalendarCheck style={{ marginRight: 8 }} /> Completion
-                  Status
-                </Text>
-
-                {/* INSTALLATION PHASE TIMELINE */}
-                <Paper p="md" radius="md">
-                  <Timeline
-                    bulletSize={20}
-                    lineWidth={2}
-                    active={-1}
-                    styles={{ root: { "--tl-color": "green" } }}
+                  <TimelineItem
+                    title="Installation Complete"
+                    lineVariant="solid"
+                    bullet={
+                      <Box
+                        style={{
+                          backgroundColor: form.values.installation_completed
+                            ? "#28a745"
+                            : "#6b6b6b",
+                          borderRadius: "50%",
+                          width: 24,
+                          height: 24,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          aspectRatio: "1 / 1",
+                        }}
+                      >
+                        <FaCheckCircle size={10} color="white" />
+                      </Box>
+                    }
+                    styles={{
+                      item: {
+                        "--tl-color": form.values.installation_completed
+                          ? "#28a745"
+                          : "#e0e0e0",
+                      },
+                      itemTitle: {
+                        color: form.values.installation_completed
+                          ? "#28a745"
+                          : "#6b6b6b",
+                        fontSize: "12px",
+                      },
+                    }}
                   >
-                    <TimelineItem
-                      key="install-header"
-                      title="Installation Phase"
-                      lineVariant="solid"
-                      bullet={
-                        <Box
-                          style={{
-                            backgroundColor: "#4A00E0",
-                            borderRadius: "50%",
-                            width: 20,
-                            height: 20,
-                            minWidth: 20,
-                            minHeight: 20,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            aspectRatio: "1 / 1",
-                          }}
-                        >
-                          <FaTools size={10} color="white" />
-                        </Box>
+                    <Text size="xs" c="dimmed">
+                      {form.values.installation_completed
+                        ? "Signed Off:"
+                        : "Pending Sign-off"}
+                    </Text>
+                    <Text size="xs" fw={500}>
+                      {form.values.installation_completed
+                        ? dayjs(form.values.installation_completed).format(
+                            "YYYY-MM-DD HH:mm"
+                          )
+                        : "—"}
+                    </Text>
+                    <Button
+                      size="xs"
+                      mt={2}
+                      variant="light"
+                      color={
+                        form.values.installation_completed ? "red" : "green"
                       }
-                      styles={{
-                        item: {
-                          "--tl-color": "#e0e0e0",
-                        },
-                        itemTitle: {
-                          color: "#4A00E0",
-                          fontWeight: 700,
-                          fontSize: "14px",
-                        },
-                      }}
-                    ></TimelineItem>
-                    <TimelineItem
-                      title="Installation Complete"
-                      lineVariant="solid"
-                      bullet={
-                        <Box
-                          style={{
-                            backgroundColor: form.values.installation_completed
-                              ? "#28a745"
-                              : "#6b6b6b",
-                            borderRadius: "50%",
-                            width: 20,
-                            height: 20,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            aspectRatio: "1 / 1",
-                          }}
-                        >
-                          <FaCheckCircle size={10} color="white" />
-                        </Box>
+                      onClick={() =>
+                        handleCompletionToggle("installation_completed")
                       }
-                      styles={{
-                        item: {
-                          "--tl-color": form.values.installation_completed
-                            ? "#28a745"
-                            : "#e0e0e0",
-                        },
-                        itemTitle: {
-                          color: form.values.installation_completed
-                            ? "#28a745"
-                            : "#6b6b6b",
-                          fontSize: "12px",
-                        },
-                      }}
                     >
-                      <Text size="xs" c="dimmed">
-                        {form.values.installation_completed
-                          ? "Signed Off:"
-                          : "Pending Sign-off"}
-                      </Text>
-                      <Text size="xs" fw={500}>
-                        {form.values.installation_completed
-                          ? dayjs(form.values.installation_completed).format(
-                              "YYYY-MM-DD HH:mm"
-                            )
-                          : "—"}
-                      </Text>
-                      <Button
-                        size="xs"
-                        mt={2}
-                        variant="light"
-                        color={
-                          form.values.installation_completed ? "red" : "green"
-                        }
-                        onClick={() =>
-                          handleCompletionToggle("installation_completed")
-                        }
-                      >
-                        {form.values.installation_completed
-                          ? "Reset"
-                          : "Complete"}
-                      </Button>
-                    </TimelineItem>
+                      {form.values.installation_completed
+                        ? "Reset"
+                        : "Complete"}
+                    </Button>
+                  </TimelineItem>
 
-                    <TimelineItem
-                      title="Final Inspection Completed"
-                      lineVariant="solid"
-                      bullet={
-                        <Box
-                          style={{
-                            backgroundColor: form.values.inspection_completed
-                              ? "#28a745"
-                              : "#6b6b6b",
-                            borderRadius: "50%",
-                            width: 20,
-                            height: 20,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            aspectRatio: "1 / 1",
-                          }}
-                        >
-                          <FaCheckCircle size={10} color="white" />
-                        </Box>
-                      }
-                      styles={{
-                        item: {
-                          "--tl-color": form.values.inspection_completed
-                            ? "#28a745"
-                            : "#e0e0e0",
-                        },
-                        itemTitle: {
-                          color: form.values.inspection_completed
+                  <TimelineItem
+                    title="Final Inspection Completed"
+                    lineVariant="solid"
+                    bullet={
+                      <Box
+                        style={{
+                          backgroundColor: form.values.inspection_completed
                             ? "#28a745"
                             : "#6b6b6b",
-                          fontSize: "12px",
-                        },
-                      }}
-                    >
-                      <Text size="xs" c="dimmed">
-                        {form.values.inspection_completed
-                          ? "Signed Off:"
-                          : "Pending Sign-off"}
-                      </Text>
-                      <Text size="xs" fw={500}>
-                        {form.values.inspection_completed
-                          ? dayjs(form.values.inspection_completed).format(
-                              "YYYY-MM-DD HH:mm"
-                            )
-                          : "—"}
-                      </Text>
-                      <Button
-                        size="xs"
-                        mt={2}
-                        variant="light"
-                        color={
-                          form.values.inspection_completed ? "red" : "green"
-                        }
-                        onClick={() =>
-                          handleCompletionToggle("inspection_completed")
-                        }
+                          borderRadius: "50%",
+                          width: 24,
+                          height: 24,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          aspectRatio: "1 / 1",
+                        }}
                       >
-                        {form.values.inspection_completed
-                          ? "Reset"
-                          : "Complete"}
-                      </Button>
-                    </TimelineItem>
-                  </Timeline>
-                </Paper>
-              </Stack>
+                        <FaCheckCircle size={10} color="white" />
+                      </Box>
+                    }
+                    styles={{
+                      item: {
+                        "--tl-color": form.values.inspection_completed
+                          ? "#28a745"
+                          : "#e0e0e0",
+                      },
+                      itemTitle: {
+                        color: form.values.inspection_completed
+                          ? "#28a745"
+                          : "#6b6b6b",
+                        fontSize: "12px",
+                      },
+                    }}
+                  >
+                    <Text size="xs" c="dimmed">
+                      {form.values.inspection_completed
+                        ? "Signed Off:"
+                        : "Pending Sign-off"}
+                    </Text>
+                    <Text size="xs" fw={500}>
+                      {form.values.inspection_completed
+                        ? dayjs(form.values.inspection_completed).format(
+                            "YYYY-MM-DD HH:mm"
+                          )
+                        : "—"}
+                    </Text>
+                    <Button
+                      size="xs"
+                      mt={2}
+                      variant="light"
+                      color={form.values.inspection_completed ? "red" : "green"}
+                      onClick={() =>
+                        handleCompletionToggle("inspection_completed")
+                      }
+                    >
+                      {form.values.inspection_completed ? "Reset" : "Complete"}
+                    </Button>
+                  </TimelineItem>
+                </Timeline>
+              </Paper>
             </Box>
             <Box pt="md" style={{ justifyItems: "center" }}>
               <Text
@@ -945,7 +917,7 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
           position: "sticky",
           bottom: 0,
           zIndex: 10,
-          background: "linear-gradient(135deg, #DDE6F5 0%, #E7D9F0 100%)",
+          background: "linear-gradient(180deg, #ebebebff 0%, #ffffffff 100%)",
         }}
       >
         <Group justify="flex-end">
