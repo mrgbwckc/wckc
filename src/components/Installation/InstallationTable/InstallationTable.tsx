@@ -102,7 +102,6 @@ export default function InstallationTable() {
           `
             id,
             job_number,
-            job_base_number,
             sales_orders:sales_orders (
               shipping_client_name
             ),

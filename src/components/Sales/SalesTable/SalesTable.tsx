@@ -69,7 +69,7 @@ interface SalesOrderView
     | "shipping_phone_1"
     | "shipping_email_1"
   > {
-  job_ref: Pick<Tables<"jobs">, "job_number" | "job_base_number"> | null;
+  job_ref: Pick<Tables<"jobs">, "job_number"> | null;
 }
 
 const genericFilter: FilterFn<SalesOrderView> = (
@@ -128,7 +128,7 @@ export default function SalesTable() {
           `
             id, sales_order_number, stage, total, deposit, invoice_balance, designer, created_at,
             shipping_client_name, shipping_street, shipping_city, shipping_province, shipping_zip,
-            job_ref:jobs (job_number, job_base_number) 
+            job_ref:jobs (job_number) 
         `
         )
         .order("created_at", { ascending: false });
@@ -243,7 +243,7 @@ export default function SalesTable() {
       }),
       columnHelper.accessor("created_at", {
         header: "Created",
-        size: 130,
+        size: 80,
         minSize: 60,
         cell: (info) => {
           const date = info.getValue<string>();

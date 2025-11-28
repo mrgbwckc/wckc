@@ -111,7 +111,6 @@ export default function ProdTable() {
           `
         id,
         job_number,
-        job_base_number,
         job_suffix,
         production_schedule:production_schedule(*),
         sales_orders:sales_orders (
