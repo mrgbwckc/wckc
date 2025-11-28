@@ -368,6 +368,13 @@ export type Database = {
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "invoices_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "prod_table_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       jobs: {
@@ -425,6 +432,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "sales_table_view"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_prod_id_fkey"
+            columns: ["prod_id"]
+            isOneToOne: false
+            referencedRelation: "prod_table_view"
+            referencedColumns: ["prod_id"]
           },
           {
             foreignKeyName: "jobs_prod_id_fkey"
@@ -568,6 +582,13 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: true
             referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_tracking_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: true
+            referencedRelation: "prod_table_view"
             referencedColumns: ["id"]
           },
         ]
@@ -806,6 +827,13 @@ export type Database = {
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "service_orders_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "prod_table_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       species: {
@@ -833,6 +861,33 @@ export type Database = {
           full_token_payload: Json | null
           role_in_jwt: string | null
           user_id: string | null
+        }
+        Relationships: []
+      }
+      prod_table_view: {
+        Row: {
+          assembly_completed_actual: string | null
+          cabinet_box: string | null
+          cabinet_color: string | null
+          cabinet_door_style: string | null
+          cabinet_species: string | null
+          custom_finish_completed_actual: string | null
+          cut_finish_completed_actual: string | null
+          cut_melamine_completed_actual: string | null
+          doors_completed_actual: string | null
+          drawer_completed_actual: string | null
+          id: number | null
+          in_plant_actual: string | null
+          job_number: string | null
+          paint_completed_actual: string | null
+          placement_date: string | null
+          prod_id: number | null
+          received_date: string | null
+          rush: boolean | null
+          ship_schedule: string | null
+          ship_status: Database["public"]["Enums"]["ShippingStatus"] | null
+          shipping_client_name: string | null
+          site_address: string | null
         }
         Relationships: []
       }

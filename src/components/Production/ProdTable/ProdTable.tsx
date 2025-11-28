@@ -1,19 +1,15 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
 import {
   createColumnHelper,
   getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
   useReactTable,
   flexRender,
   PaginationState,
   ColumnFiltersState,
-  FilterFn,
-  getPaginationRowModel,
+  SortingState,
 } from "@tanstack/react-table";
 import {
   Table,
@@ -27,137 +23,106 @@ import {
   Box,
   Badge,
   Tooltip,
-  ActionIcon,
-  Button,
   rem,
   Stack,
   Accordion,
   SimpleGrid,
-  Select,
   ThemeIcon,
   Title,
+  Button,
 } from "@mantine/core";
 import {
   FaSearch,
   FaSort,
   FaSortDown,
   FaSortUp,
-  FaCalendarAlt,
   FaFire,
   FaCheckCircle,
   FaRegCircle,
 } from "react-icons/fa";
-import { useSupabase } from "@/hooks/useSupabase";
-import { Tables } from "@/types/db";
-import dayjs from "dayjs";
-import { DateInput, DatePicker } from "@mantine/dates";
 import { FaGears } from "react-icons/fa6";
+import dayjs from "dayjs";
+import { DateInput } from "@mantine/dates";
+import { useProdTable } from "@/hooks/useProdTable";
+import { Views } from "@/types/db";
 
-// --- 1. Types ---
-type ProductionJobView = Tables<"jobs"> & {
-  production_schedule: Tables<"production_schedule"> | null;
-  sales_orders:
-    | (Tables<"sales_orders"> & {
-        cabinet:
-          | (Tables<"cabinets"> & {
-              species: Tables<"species"> | null;
-              colors: Tables<"colors"> | null;
-              door_styles: Tables<"door_styles"> | null;
-            })
-          | null;
-      })
-    | null;
-};
+// Use the View Type
+type ProductionListView = Views<"prod_table_view">;
 
-// --- 2. Generic Filter ---
-const genericFilter: FilterFn<ProductionJobView> = (
-  row,
-  columnId,
-  filterValue
-) => {
-  const val = String(row.getValue(columnId) ?? "").toLowerCase();
-  return val.includes(String(filterValue).toLowerCase());
-};
-
-// --- 3. Component ---
 export default function ProdTable() {
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const router = useRouter();
+
+  // --- 1. State Management ---
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 20,
   });
-  const { supabase, isAuthenticated } = useSupabase();
-  const router = useRouter();
-  const getFilterValue = (id: string): string => {
-    // Find the filter object, access its value, and ensure it's converted to a string.
-    const filter = columnFilters.find((f) => f.id === id);
-    const value = filter?.value;
+  const [sorting, setSorting] = useState<SortingState>([]);
 
-    // Handle null/undefined or any odd types by forcing an empty string fallback
-    return String(value ?? "");
+  // Two stages of filters: Inputs (UI) and Active (Query)
+  const [inputFilters, setInputFilters] = useState<ColumnFiltersState>([]);
+  const [activeFilters, setActiveFilters] = useState<ColumnFiltersState>([]);
+
+  // Helpers
+  const setInputFilterValue = (
+    id: string,
+    value: string | undefined | null
+  ) => {
+    setInputFilters((prev) => {
+      const existing = prev.filter((f) => f.id !== id);
+      if (!value) return existing;
+      return [...existing, { id, value }];
+    });
   };
-  // --- 4. Fetch data from jobs ---
-  const {
-    data: productionJobs,
-    isLoading,
-    isError,
-    error,
-  } = useQuery<ProductionJobView[]>({
-    queryKey: ["production_schedule_list"],
-    queryFn: async () => {
-      const { data, error: dbError } = await supabase
-        .from("jobs")
-        .select(
-          `
-        id,
-        job_number,
-        job_suffix,
-        production_schedule:production_schedule(*),
-        sales_orders:sales_orders (
-        shipping_street, shipping_city, shipping_province, shipping_zip,
-         shipping_client_name,
-          cabinet:cabinets(
-          box,
-          door_styles(name),
-          species(Species),
-          colors(Name))
-        )
-        )
-      `
-        )
-        .not("prod_id", "is", null);
 
-      if (dbError) throw new Error(dbError.message || "Failed to fetch jobs");
-      return data as unknown as ProductionJobView[];
-    },
-    enabled: isAuthenticated,
+  const getInputFilterValue = (id: string) => {
+    return (inputFilters.find((f) => f.id === id)?.value as string) || "";
+  };
+
+  const handleApplyFilters = () => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    setActiveFilters(inputFilters);
+  };
+
+  const handleClearFilters = () => {
+    setInputFilters([]);
+    setActiveFilters([]);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
+  // --- 2. Data Fetching ---
+  const { data, isLoading, isError, error } = useProdTable({
+    pagination,
+    columnFilters: activeFilters,
+    sorting,
   });
 
-  // --- 5. Columns ---
-  const columnHelper = createColumnHelper<ProductionJobView>();
+  const tableData = data?.data || [];
+  const totalCount = data?.count || 0;
+  const pageCount = Math.ceil(totalCount / pagination.pageSize);
+
+  // --- 3. Columns ---
+  const columnHelper = createColumnHelper<ProductionListView>();
 
   const columns = [
     columnHelper.accessor("job_number", {
       header: "Job No.",
-      size: 200,
+      size: 150,
       minSize: 150,
       cell: (info) => (
         <Group gap={4}>
           <Text fw={600} size="sm">
             {info.getValue()}
           </Text>
-          {info.row.original.production_schedule?.rush && (
+          {info.row.original.rush && (
             <Tooltip label="RUSH JOB">
               <FaFire size={12} color="red" />
             </Tooltip>
           )}
         </Group>
       ),
-      enableColumnFilter: true,
-      filterFn: genericFilter as any,
     }),
-    columnHelper.accessor("production_schedule.received_date", {
-      id: "received_date",
+    columnHelper.accessor("received_date", {
       header: "Received Date",
       size: 140,
       minSize: 120,
@@ -167,8 +132,7 @@ export default function ProdTable() {
         return dayjs(date).format("YYYY-MM-DD");
       },
     }),
-    columnHelper.accessor("production_schedule.placement_date", {
-      id: "placement_date",
+    columnHelper.accessor("placement_date", {
       header: "Placement Date",
       size: 140,
       minSize: 120,
@@ -178,40 +142,40 @@ export default function ProdTable() {
         return dayjs(date).format("YYYY-MM-DD");
       },
     }),
-
-    columnHelper.accessor("production_schedule.ship_schedule", {
-      id: "ship_schedule",
+    columnHelper.accessor("ship_schedule", {
       header: "Ship Date",
-      size: 600,
-      minSize: 650,
+      size: 250,
+      minSize: 200,
       cell: (info) => {
         const date = info.getValue();
-        const status = info.row.original.production_schedule?.ship_status;
+        const status = info.row.original.ship_status;
 
         let gradient: string;
         let label: string;
 
         switch (status) {
           case "confirmed":
-            gradient = "linear-gradient(135deg, #4A00E0, #8E2DE2)"; // purple-blue
+            gradient = "linear-gradient(135deg, #4A00E0, #8E2DE2)";
             label = "CONFIRMED";
             break;
           case "tentative":
-            gradient = "linear-gradient(135deg, #FF6A00, #FFB347)"; // orange-yellow
+            gradient = "linear-gradient(135deg, #FF6A00, #FFB347)";
             label = "TENTATIVE";
             break;
           default:
-            gradient = "linear-gradient(135deg, #B0BEC5, #78909C)"; // muted gray-blue
+            gradient = "linear-gradient(135deg, #B0BEC5, #78909C)";
             label = "UNPROCESSED";
         }
 
         return (
-          <Group style={{ width: "100%" }} justify="space-between">
+          <Group
+            style={{ width: "100%" }}
+            justify="space-between"
+            wrap="nowrap"
+          >
             <Text
               style={{
                 whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
                 color: date ? undefined : "orange",
               }}
             >
@@ -236,36 +200,63 @@ export default function ProdTable() {
         );
       },
     }),
-
-    columnHelper.accessor("sales_orders.shipping_client_name", {
-      id: "clientlastName",
+    columnHelper.accessor("shipping_client_name", {
+      id: "client",
       header: "Client",
       size: 150,
       minSize: 120,
       cell: (info) => info.getValue() ?? "—",
     }),
-
     columnHelper.display({
       id: "production_status",
       header: "Progress Steps",
       size: 500,
       minSize: 500,
       cell: (info) => {
-        const schedule = info.row.original.production_schedule;
-        if (!schedule) return <Text c="dimmed">—</Text>;
+        const row = info.row.original;
 
-        const steps: {
-          key: keyof Tables<"production_schedule">;
-          label: string;
-        }[] = [
-          { key: "in_plant_actual", label: "In Plant" },
-          { key: "doors_completed_actual", label: "Doors" },
-          { key: "cut_finish_completed_actual", label: "Cut Finish" },
-          { key: "custom_finish_completed_actual", label: "Custom Finish" },
-          { key: "drawer_completed_actual", label: "Drawer" },
-          { key: "cut_melamine_completed_actual", label: "Cut Melamine" },
-          { key: "paint_completed_actual", label: "Paint" },
-          { key: "assembly_completed_actual", label: "Assembly" },
+        // Reconstruct steps array from flat view columns
+        const steps = [
+          {
+            key: "in_plant_actual",
+            label: "In Plant",
+            val: row.in_plant_actual,
+          },
+          {
+            key: "doors_completed_actual",
+            label: "Doors",
+            val: row.doors_completed_actual,
+          },
+          {
+            key: "cut_finish_completed_actual",
+            label: "Cut Finish",
+            val: row.cut_finish_completed_actual,
+          },
+          {
+            key: "custom_finish_completed_actual",
+            label: "Custom Finish",
+            val: row.custom_finish_completed_actual,
+          },
+          {
+            key: "drawer_completed_actual",
+            label: "Drawer",
+            val: row.drawer_completed_actual,
+          },
+          {
+            key: "cut_melamine_completed_actual",
+            label: "Cut Melamine",
+            val: row.cut_melamine_completed_actual,
+          },
+          {
+            key: "paint_completed_actual",
+            label: "Paint",
+            val: row.paint_completed_actual,
+          },
+          {
+            key: "assembly_completed_actual",
+            label: "Assembly",
+            val: row.assembly_completed_actual,
+          },
         ];
 
         return (
@@ -279,7 +270,7 @@ export default function ProdTable() {
             }}
           >
             {steps.map((step, idx) => {
-              const done = !!schedule[step.key];
+              const done = !!step.val;
               return (
                 <Text
                   key={idx}
@@ -307,7 +298,6 @@ export default function ProdTable() {
           </Group>
         );
       },
-      enableColumnFilter: false,
     }),
     columnHelper.display({
       id: "cabinet_info",
@@ -315,87 +305,65 @@ export default function ProdTable() {
       size: 180,
       minSize: 150,
       cell: (info) => {
-        const cabinet = info.row.original.sales_orders?.cabinet;
-        if (!cabinet) return <Text c="dimmed">—</Text>;
+        const row = info.row.original;
         const parts = [
-          cabinet.species?.Species,
-          cabinet.colors?.Name,
-          cabinet.door_styles?.name,
+          row.cabinet_species,
+          row.cabinet_color,
+          row.cabinet_door_style,
         ].filter(Boolean);
 
         return (
           <Text size="sm" c="dimmed" lineClamp={1} tt="capitalize">
-            {parts.join(" • ")}
+            {parts.length > 0 ? parts.join(" • ") : "—"}
           </Text>
         );
       },
-      enableColumnFilter: false,
     }),
-    columnHelper.display({
-      id: "site_address",
+    columnHelper.accessor("site_address", {
       header: "Site Address",
       size: 300,
       minSize: 200,
-      cell: (info) => {
-        const order = info.row.original.sales_orders;
-        if (!order) return <Text c="dimmed">—</Text>;
-        const address = [
-          order.shipping_street,
-          order.shipping_city,
-          order.shipping_province,
-          order.shipping_zip,
-        ]
-          .filter(Boolean)
-          .join(", ");
-        return (
-          <Text size="sm" c="dimmed" lineClamp={1}>
-            {address}
-          </Text>
-        );
-      },
-      enableColumnFilter: true, // enable filtering
-      filterFn: (row, columnId, filterValue) => {
-        const order = row.original.sales_orders;
-        if (!order || !filterValue) return true;
-        const address = [
-          order.shipping_street,
-          order.shipping_city,
-          order.shipping_province,
-          order.shipping_zip,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        return address.includes(String(filterValue).toLowerCase());
-      },
+      cell: (info) => (
+        <Text size="sm" c="dimmed" lineClamp={1}>
+          {info.getValue() || "—"}
+        </Text>
+      ),
     }),
   ];
-  // --- 6. Table setup ---
+
+  // --- 4. Table Instance ---
   const table = useReactTable({
-    data: productionJobs || [],
+    data: tableData,
     columns,
-    state: { columnFilters, pagination },
-    onColumnFiltersChange: setColumnFilters,
+    pageCount: pageCount,
+    state: {
+      pagination,
+      sorting,
+      columnFilters: activeFilters, // Pass active filters to table state
+    },
+    manualPagination: true,
+    manualFiltering: true,
+    manualSorting: true,
     onPaginationChange: setPagination,
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
   });
 
-  // --- 7. Render ---
-  if (!isAuthenticated || isLoading)
+  if (isLoading) {
     return (
-      <Center>
+      <Center h={400}>
         <Loader />
       </Center>
     );
-  if (isError)
+  }
+
+  if (isError) {
     return (
-      <Center>
+      <Center h={400}>
         <Text c="red">{(error as any)?.message}</Text>
       </Center>
     );
+  }
 
   return (
     <Box
@@ -424,6 +392,7 @@ export default function ProdTable() {
           </Text>
         </Stack>
       </Group>
+
       {/* SEARCH/FILTER ACCORDION */}
       <Accordion variant="contained" radius="md" mb="md">
         <Accordion.Item value="search-filters">
@@ -432,110 +401,111 @@ export default function ProdTable() {
           </Accordion.Control>
           <Accordion.Panel>
             <SimpleGrid
-              cols={{ base: 1, sm: 3, md: 5, lg: 6 }} // Expanded grid for more filters
+              cols={{ base: 1, sm: 3, md: 5, lg: 6 }}
               mt="sm"
               spacing="md"
             >
-              {/* Filter 1: Job Number */}
               <TextInput
                 label="Job Number"
                 placeholder="e.g., 202401"
-                value={getFilterValue("job_number")}
+                value={getInputFilterValue("job_number")}
                 onChange={(e) =>
-                  table.getColumn("job_number")?.setFilterValue(e.target.value)
+                  setInputFilterValue("job_number", e.target.value)
                 }
               />
-              {/* Filter 2: Client Name */}
               <TextInput
                 label="Client"
                 placeholder="e.g., Smith"
-                value={getFilterValue("clientlastName")}
-                onChange={(e) =>
-                  table
-                    .getColumn("clientlastName")
-                    ?.setFilterValue(e.target.value)
-                }
+                value={getInputFilterValue("client")}
+                onChange={(e) => setInputFilterValue("client", e.target.value)}
               />
               <DateInput
                 label="Received Date"
                 placeholder="Filter by Date"
                 clearable
                 value={
-                  getFilterValue("received_date")
-                    ? dayjs(getFilterValue("received_date")).toDate()
+                  getInputFilterValue("received_date")
+                    ? dayjs(getInputFilterValue("received_date")).toDate()
                     : null
                 }
                 onChange={(date) => {
-                  // Safely format the Date object back to YYYY-MM-DD using Day.js
-                  const formattedDate = date
+                  const formatted = date
                     ? dayjs(date).format("YYYY-MM-DD")
                     : undefined;
-
-                  table
-                    .getColumn("received_date")
-                    ?.setFilterValue(formattedDate);
+                  setInputFilterValue("received_date", formatted);
                 }}
                 valueFormat="YYYY-MM-DD"
               />
-              {/* Filter 5: Placement Date (Text search for simplicity) */}
               <DateInput
                 label="Placement Date"
                 placeholder="Filter by Date"
                 clearable
                 value={
-                  getFilterValue("placement_date")
-                    ? dayjs(getFilterValue("placement_date")).toDate()
+                  getInputFilterValue("placement_date")
+                    ? dayjs(getInputFilterValue("placement_date")).toDate()
                     : null
                 }
                 onChange={(date) => {
-                  // Safely format the Date object back to YYYY-MM-DD using Day.js
-                  const formattedDate = date
+                  const formatted = date
                     ? dayjs(date).format("YYYY-MM-DD")
                     : undefined;
-
-                  table
-                    .getColumn("placement_date")
-                    ?.setFilterValue(formattedDate);
+                  setInputFilterValue("placement_date", formatted);
                 }}
                 valueFormat="YYYY-MM-DD"
               />
               <DateInput
                 label="Ship Date"
-                placeholder="Filter by Date" // Added placeholder for clarity
+                placeholder="Filter by Date"
                 clearable
                 value={
-                  getFilterValue("ship_schedule")
-                    ? dayjs(getFilterValue("ship_schedule")).toDate() // FIX 1: Use dayjs to parse the filter string into a Date object
+                  getInputFilterValue("ship_schedule")
+                    ? dayjs(getInputFilterValue("ship_schedule")).toDate()
                     : null
                 }
                 onChange={(date) => {
-                  // FIX 2: Use dayjs to safely format the Date object back to a YYYY-MM-DD string
-                  const formattedDate = date
+                  const formatted = date
                     ? dayjs(date).format("YYYY-MM-DD")
                     : undefined;
-
-                  table
-                    .getColumn("ship_schedule")
-                    ?.setFilterValue(formattedDate);
+                  setInputFilterValue("ship_schedule", formatted);
                 }}
-                // Added valueFormat for clarity, though Day.js handles the output formatting
                 valueFormat="YYYY-MM-DD"
               />
-              {/* Filter 7: Site Address (Text search) */}
               <TextInput
                 label="Site Address"
                 placeholder="Street or City"
-                value={getFilterValue("site_address")}
+                value={getInputFilterValue("site_address")}
                 onChange={(e) =>
-                  table
-                    .getColumn("site_address")
-                    ?.setFilterValue(e.target.value)
+                  setInputFilterValue("site_address", e.target.value)
                 }
               />
             </SimpleGrid>
+
+            {/* APPLY / CLEAR BUTTONS */}
+            <Group justify="flex-end" mt="md">
+              <Button
+                variant="default"
+                color="gray"
+                onClick={handleClearFilters}
+              >
+                Clear Filters
+              </Button>
+              <Button
+                variant="filled"
+                color="blue"
+                leftSection={<FaSearch size={14} />}
+                onClick={handleApplyFilters}
+                style={{
+                  background:
+                    "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
+                }}
+              >
+                Apply Filters
+              </Button>
+            </Group>
           </Accordion.Panel>
         </Accordion.Item>
       </Accordion>
+
       <ScrollArea
         style={{
           flex: 1,
@@ -591,7 +561,9 @@ export default function ProdTable() {
               <Table.Tr>
                 <Table.Td colSpan={columns.length}>
                   <Center>
-                    <Text c="dimmed">No production jobs found.</Text>
+                    <Text c="dimmed">
+                      No production jobs found matching the filters.
+                    </Text>
                   </Center>
                 </Table.Td>
               </Table.Tr>

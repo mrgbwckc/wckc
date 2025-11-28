@@ -331,19 +331,18 @@ export default function SalesTable() {
               />
             </SimpleGrid>
             <Group justify="flex-end" mt="md">
-              <Button
-                leftSection={<FaSearch size={14} />}
-                onClick={clearFilters}
-                color="red"
-                variant="filled"
-              >
+              <Button variant="default" color="gray" onClick={clearFilters}>
                 Clear Filters
               </Button>
               <Button
+                variant="filled"
+                color="blue"
                 leftSection={<FaSearch size={14} />}
                 onClick={handleSearch}
-                color="blue"
-                variant="filled"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
+                }}
               >
                 Apply Filters
               </Button>
