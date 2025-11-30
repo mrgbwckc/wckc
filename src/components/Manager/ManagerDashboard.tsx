@@ -115,7 +115,7 @@ const SalesSpikeChart = ({
     <Paper p="md" shadow="sm" radius="md" withBorder style={{ height: "100%" }}>
       <Group justify="space-between" mb="md">
         <Title order={5} c="dimmed">
-          Monthly Sales Volume (12 Mo)
+          Monthly Sales Volume {dayjs().year()}
         </Title>
         <FaChartBar color="#4A00E0" />
       </Group>
@@ -138,7 +138,10 @@ const SalesSpikeChart = ({
               justify="flex-end"
               style={{ flex: 1, height: "100%" }}
             >
-              <Tooltip label={`${count} Sales`} withArrow>
+              <Tooltip
+                label={`${count} ${count === 1 ? "Sale" : "Sales"}`}
+                withArrow
+              >
                 <Box
                   style={{
                     width: "80%",
@@ -271,13 +274,13 @@ export default function ManagerDashboardClient() {
     // Initialize 12 buckets
     const chartData: { label: string; count: number }[] = [];
     const today = dayjs();
-    let loopDate = today.subtract(11, "month").startOf("month");
+    let loopDate = today.startOf("year");
 
     for (let i = 0; i < 12; i++) {
       const key = loopDate.format("YYYY-MM");
       monthlyCounts[key] = 0;
       chartData.push({
-        label: loopDate.format("MMM YY"), // Label for display
+        label: loopDate.format("MMM"), // Label for display
         count: 0, // Placeholder
       });
       loopDate = loopDate.add(1, "month");
@@ -301,11 +304,7 @@ export default function ManagerDashboardClient() {
     // Map counts to chart data array (preserving order)
     const finalChartData = chartData.map((d, index) => {
       // Re-calculate key from start date to match the map
-      const key = today
-        .subtract(11, "month")
-        .startOf("month")
-        .add(index, "month")
-        .format("YYYY-MM");
+      const key = today.startOf("year").add(index, "month").format("YYYY-MM");
       return {
         ...d,
         count: monthlyCounts[key] || 0,
@@ -451,7 +450,7 @@ export default function ManagerDashboardClient() {
               style={{ height: "100%" }}
             >
               <Title order={5} mb="lg" c="dimmed">
-                Shop Floor Throughput
+                Plant Throughput
               </Title>
               <Center h={180}>
                 <RingProgress
@@ -467,12 +466,12 @@ export default function ManagerDashboardClient() {
                   sections={[
                     {
                       value: completionRate,
-                      color: "teal",
+                      color: "#00ce1bff",
                       tooltip: `${finishedJobs} Jobs Finished`,
                     },
                     {
                       value: 100 - completionRate,
-                      color: "orange",
+                      color: "#ff6600ff",
                       tooltip: `${totalUncompleteJobs} Jobs Incomplete`,
                     },
                   ]}
