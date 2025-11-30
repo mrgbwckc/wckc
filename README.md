@@ -4,6 +4,8 @@ A modern, full-stack internal ERP application designed for Woodcraft Kitchen Cab
 
 ## 🚀 Tech Stack
 
+
+
 - **Framework:** [Next.js 14 (App Router)](https://nextjs.org/)
 - **Language:** TypeScript
 - **Database:** [Supabase](https://supabase.com/) (PostgreSQL)
