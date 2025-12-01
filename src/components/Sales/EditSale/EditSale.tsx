@@ -31,6 +31,8 @@ import {
   Table,
   ActionIcon,
   Tooltip,
+  Checkbox,
+  Collapse,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import { FaCopy, FaPlus, FaTools, FaEye } from "react-icons/fa";
@@ -74,6 +76,14 @@ interface ExtendedMasterOrderInput extends MasterOrderInput {
   manual_job_suffix?: string;
 }
 
+// State type for new door style
+interface NewDoorStyleState {
+  name: string;
+  model: string;
+  is_pre_manufactured: boolean;
+  is_made_in_house: boolean;
+}
+
 export default function EditSale({ salesOrderId }: EditSaleProps) {
   const { supabase, isAuthenticated } = useSupabase();
   const { user } = useUser();
@@ -86,13 +96,28 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
 
   const [speciesSearch, setSpeciesSearch] = useState("");
   const [colorSearch, setColorSearch] = useState("");
+  const [doorStyleSearch, setDoorStyleSearch] = useState("");
   const [newItemValue, setNewItemValue] = useState("");
+
+  // Object state for Door Style modal
+  const [newDoorStyle, setNewDoorStyle] = useState<NewDoorStyleState>({
+    name: "",
+    model: "",
+    is_pre_manufactured: false,
+    is_made_in_house: false,
+  });
+
   const [
     speciesModalOpened,
     { open: openSpeciesModal, close: closeSpeciesModal },
   ] = useDisclosure(false);
   const [colorModalOpened, { open: openColorModal, close: closeColorModal }] =
     useDisclosure(false);
+  const [
+    doorStyleModalOpened,
+    { open: openDoorStyleModal, close: closeDoorStyleModal },
+  ] = useDisclosure(false);
+
   const { data: jobBaseOptions, isLoading: jobsLoading } =
     useJobBaseNumbers(isAuthenticated);
 
@@ -211,6 +236,40 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
       form.setFieldValue("cabinet.color", String(newId));
       closeColorModal();
       setNewItemValue("");
+    },
+    onError: (err: any) =>
+      notifications.show({
+        title: "Error",
+        message: err.message,
+        color: "red",
+      }),
+  });
+
+  const addDoorStyleMutation = useMutation({
+    mutationFn: async (values: NewDoorStyleState) => {
+      const { data, error } = await supabase
+        .from("door_styles")
+        .insert(values)
+        .select("id")
+        .single();
+      if (error) throw error;
+      return data.id;
+    },
+    onSuccess: (newId) => {
+      notifications.show({
+        title: "Success",
+        message: "Door Style added",
+        color: "green",
+      });
+      queryClient.invalidateQueries({ queryKey: ["door-styles-list"] });
+      form.setFieldValue("cabinet.door_style", String(newId));
+      closeDoorStyleModal();
+      setNewDoorStyle({
+        name: "",
+        model: "",
+        is_pre_manufactured: false,
+        is_made_in_house: false,
+      });
     },
     onError: (err: any) =>
       notifications.show({
@@ -1023,27 +1082,42 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                       placeholder="Select Door Style"
                       data={doorStyleOptions}
                       searchable
-                      nothingFoundMessage="No door style found"
+                      searchValue={doorStyleSearch}
+                      onSearchChange={setDoorStyleSearch}
+                      nothingFoundMessage={
+                        doorStyleSearch.trim().length > 0 && (
+                          <Button
+                            fullWidth
+                            variant="light"
+                            size="xs"
+                            onClick={() => {
+                              setNewDoorStyle((prev) => ({
+                                ...prev,
+                                name: doorStyleSearch,
+                              }));
+                              openDoorStyleModal();
+                            }}
+                          >
+                            + Add "{doorStyleSearch}"
+                          </Button>
+                        )
+                      }
                       {...form.getInputProps(`cabinet.door_style`)}
                     />
-                    <Select
+                    <Autocomplete
                       label="Finish"
-                      placeholder="Select Finish"
+                      placeholder="Select or type Finish"
                       data={FinishOptions}
-                      searchable
-                      nothingFoundMessage="No finish found"
                       {...form.getInputProps(`cabinet.finish`)}
                     />
                     <TextInput
                       label="Glaze"
                       {...form.getInputProps(`cabinet.glaze`)}
                     />
-                    <Select
+                    <Autocomplete
                       label="Top Drawer Front"
-                      placeholder="Select Top Drawer Front"
+                      placeholder="Select or type Top Drawer Front"
                       data={TopDrawerFrontOptions}
-                      searchable
-                      nothingFoundMessage="No top drawer front found"
                       {...form.getInputProps(`cabinet.top_drawer_front`)}
                     />
                   </SimpleGrid>
@@ -1053,28 +1127,22 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                       label="Box"
                       {...form.getInputProps(`cabinet.box`)}
                     />
-                    <Select
+                    <Autocomplete
                       label="Interior Material"
-                      placeholder="Select Interior Material"
+                      placeholder="Select or type Interior Material"
                       data={InteriorOptions}
-                      searchable
-                      nothingFoundMessage="No interior material found"
                       {...form.getInputProps(`cabinet.interior`)}
                     />
-                    <Select
+                    <Autocomplete
                       label="Drawer Box"
-                      placeholder="Select Drawer Box"
+                      placeholder="Select or type Drawer Box"
                       data={DrawerBoxOptions}
-                      searchable
-                      nothingFoundMessage="No drawer box found"
                       {...form.getInputProps(`cabinet.drawer_box`)}
                     />
-                    <Select
+                    <Autocomplete
                       label="Drawer Hardware"
-                      placeholder="Select Drawer Hardware"
+                      placeholder="Select or type Drawer Hardware"
                       data={DrawerHardwareOptions}
-                      searchable
-                      nothingFoundMessage="No drawer hardware found"
                       {...form.getInputProps(`cabinet.drawer_hardware`)}
                     />
                   </SimpleGrid>
@@ -1240,12 +1308,10 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                     {...form.getInputProps("comments")}
                   />
                   <SimpleGrid cols={2} mt="sm">
-                    <Select
+                    <Autocomplete
                       label="Order Type"
                       placeholder="Single Fam, Multi Fam, Reno..."
                       data={OrderTypeOptions}
-                      searchable
-                      nothingFoundMessage="No order type found"
                       {...form.getInputProps("order_type")}
                     />
                     <Select
@@ -1314,6 +1380,7 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                     <Table.Tr>
                       <Table.Th>SO #</Table.Th>
                       <Table.Th>Date Entered</Table.Th>
+                      <Table.Th>Type</Table.Th>
                       <Table.Th>Status</Table.Th>
                       <Table.Th>Action</Table.Th>
                     </Table.Tr>
@@ -1330,6 +1397,7 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                           <Table.Td>
                             {dayjs(so.date_entered).format("YYYY-MM-DD")}
                           </Table.Td>
+                          <Table.Td>{so.service_type || "—"}</Table.Td>
                           <Table.Td>
                             {so.completed_at ? (
                               <Badge color="green" variant="light">
@@ -1463,6 +1531,68 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
               loading={addColorMutation.isPending}
             >
               Save Color
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      <Modal
+        opened={doorStyleModalOpened}
+        onClose={closeDoorStyleModal}
+        title="Add New Door Style"
+        centered
+      >
+        <Stack>
+          <TextInput
+            label="Door Style Name"
+            value={newDoorStyle.name}
+            onChange={(e) =>
+              setNewDoorStyle((prev) => ({ ...prev, name: e.target.value }))
+            }
+            data-autofocus
+          />
+          <TextInput
+            label="Model Name"
+            value={newDoorStyle.model}
+            onChange={(e) =>
+              setNewDoorStyle((prev) => ({ ...prev, model: e.target.value }))
+            }
+          />
+          <Group>
+            <Checkbox
+              label="Pre-Manufactured"
+              checked={newDoorStyle.is_pre_manufactured}
+              onChange={(e) => {
+                // Fix: Capture value outside the state setter callback to avoid event pooling issues
+                const isChecked = e.currentTarget.checked;
+                setNewDoorStyle((prev) => ({
+                  ...prev,
+                  is_pre_manufactured: isChecked,
+                }));
+              }}
+            />
+            <Checkbox
+              label="Made In House"
+              checked={newDoorStyle.is_made_in_house}
+              onChange={(e) => {
+                // Fix: Capture value outside the state setter callback
+                const isChecked = e.currentTarget.checked;
+                setNewDoorStyle((prev) => ({
+                  ...prev,
+                  is_made_in_house: isChecked,
+                }));
+              }}
+            />
+          </Group>
+          <Group justify="flex-end">
+            <Button variant="default" onClick={closeDoorStyleModal}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => addDoorStyleMutation.mutate(newDoorStyle)}
+              loading={addDoorStyleMutation.isPending}
+            >
+              Save Door Style
             </Button>
           </Group>
         </Stack>
