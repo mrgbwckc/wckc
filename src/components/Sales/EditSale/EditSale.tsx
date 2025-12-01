@@ -28,9 +28,12 @@ import {
   Box,
   Autocomplete,
   Modal,
+  Table,
+  ActionIcon,
+  Tooltip,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
-import { FaCopy, FaPlus } from "react-icons/fa";
+import { FaCopy, FaPlus, FaTools, FaEye } from "react-icons/fa";
 import { useSupabase } from "@/hooks/useSupabase";
 import {
   MasterOrderInput,
@@ -49,6 +52,7 @@ import {
   TopDrawerFrontOptions,
 } from "@/dropdowns/dropdownOptions";
 import { useJobBaseNumbers } from "@/hooks/useJobBaseNumbers";
+import dayjs from "dayjs";
 
 const FEATURE_MANUAL_JOB_ENTRY = true;
 
@@ -256,6 +260,24 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
       return transformedData as any;
     },
     enabled: isAuthenticated && !!salesOrderId,
+  });
+
+  const jobId = salesOrderData?.job?.id;
+
+  const { data: relatedServiceOrders } = useQuery({
+    queryKey: ["related-service-orders", jobId],
+    queryFn: async () => {
+      if (!jobId) return [];
+      const { data, error } = await supabase
+        .from("service_orders")
+        .select("*")
+        .eq("job_id", jobId)
+        .order("date_entered", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAuthenticated && !!jobId,
   });
 
   const { data: clientsData, isLoading: clientsLoading } = useQuery({
@@ -1262,6 +1284,92 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
               </Stack>
             </SimpleGrid>
           </Paper>
+
+          {jobId && (
+            <Paper p="md" radius="md" shadow="sm" withBorder bg={"gray.1"}>
+              <Group mb="md">
+                <FaTools size={18} color="#4A00E0" />
+                <Text fw={600} size="lg">
+                  Related Service Orders
+                </Text>
+                <Button
+                  size="xs"
+                  variant="light"
+                  leftSection={<FaPlus size={10} />}
+                  onClick={() => router.push(`/dashboard/serviceorders/new`)}
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
+                    color: "white",
+                    border: "none",
+                  }}
+                >
+                  New Service Order
+                </Button>
+              </Group>
+
+              {relatedServiceOrders && relatedServiceOrders.length > 0 ? (
+                <Table striped highlightOnHover withTableBorder>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>SO #</Table.Th>
+                      <Table.Th>Date Entered</Table.Th>
+                      <Table.Th>Status</Table.Th>
+                      <Table.Th>Action</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {relatedServiceOrders.map(
+                      (so: Tables<"service_orders">) => (
+                        <Table.Tr key={so.service_order_id}>
+                          <Table.Td>
+                            <Text fw={500} size="sm">
+                              {so.service_order_number}
+                            </Text>
+                          </Table.Td>
+                          <Table.Td>
+                            {dayjs(so.date_entered).format("YYYY-MM-DD")}
+                          </Table.Td>
+                          <Table.Td>
+                            {so.completed_at ? (
+                              <Badge color="green" variant="light">
+                                Completed
+                              </Badge>
+                            ) : (
+                              <Badge color="blue" variant="light">
+                                Open
+                              </Badge>
+                            )}
+                          </Table.Td>
+                          <Table.Td>
+                            <Tooltip label="View Details">
+                              <ActionIcon
+                                variant="subtle"
+                                color="blue"
+                                onClick={() =>
+                                  router.push(
+                                    `/dashboard/serviceorders/${so.service_order_id}`
+                                  )
+                                }
+                              >
+                                <FaEye />
+                              </ActionIcon>
+                            </Tooltip>
+                          </Table.Td>
+                        </Table.Tr>
+                      )
+                    )}
+                  </Table.Tbody>
+                </Table>
+              ) : (
+                <Center p="sm" bg="white" style={{ borderRadius: "8px" }}>
+                  <Text c="dimmed" size="sm">
+                    No service orders found for this job.
+                  </Text>
+                </Center>
+              )}
+            </Paper>
+          )}
 
           <Paper
             withBorder

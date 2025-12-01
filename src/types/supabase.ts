@@ -130,6 +130,7 @@ export type Database = {
           firstName: string | null
           id: number
           lastName: string
+          legacy_id: string | null
           phone1: string | null
           phone2: string | null
           province: string | null
@@ -146,6 +147,7 @@ export type Database = {
           firstName?: string | null
           id?: number
           lastName: string
+          legacy_id?: string | null
           phone1?: string | null
           phone2?: string | null
           province?: string | null
@@ -162,6 +164,7 @@ export type Database = {
           firstName?: string | null
           id?: number
           lastName?: string
+          legacy_id?: string | null
           phone1?: string | null
           phone2?: string | null
           province?: string | null
