@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useForm } from "@mantine/form";
 import { zodResolver } from "@/utils/zodResolver/zodResolver";
@@ -38,8 +38,12 @@ import {
 import { useJobs } from "@/hooks/useJobs";
 import CustomRichTextEditor from "@/components/RichTextEditor/RichTextEditor";
 import AddInstaller from "@/components/Installers/AddInstaller/AddInstaller";
-
-export default function NewServiceOrder() {
+interface NewServiceOrderProps {
+  preselectedJobId?: string;
+}
+export default function NewServiceOrder({
+  preselectedJobId,
+}: NewServiceOrderProps) {
   const { supabase, isAuthenticated } = useSupabase();
   const { user } = useUser();
   const router = useRouter();
@@ -75,7 +79,7 @@ export default function NewServiceOrder() {
 
   const form = useForm<ServiceOrderFormValues>({
     initialValues: {
-      job_id: "",
+      job_id: preselectedJobId || "",
       service_order_number: "",
       due_date: null,
       installer_id: null,
@@ -98,6 +102,7 @@ export default function NewServiceOrder() {
       const jobId = form.values.job_id;
       if (!jobId) {
         setExistingSOCount(null);
+        form.setFieldValue("service_order_number", "");
         return;
       }
 
@@ -271,7 +276,7 @@ export default function NewServiceOrder() {
                         ) : null}
                       </Group>
                     }
-                    placeholder="e.g. SO-40100-1"
+                    placeholder="e.g. 40100-S1"
                     {...form.getInputProps("service_order_number")}
                   />
                 </SimpleGrid>
@@ -472,7 +477,6 @@ export default function NewServiceOrder() {
         opened={isAddInstallerOpen}
         onClose={() => {
           closeAddInstaller();
-          // Invalidate the query key used in this component to refresh the list
           queryClient.invalidateQueries({ queryKey: ["installers-list"] });
         }}
       />

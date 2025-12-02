@@ -995,7 +995,6 @@ export type Database = {
           due_date: string | null
           id: number | null
           record_type: string | null
-          status_raw: string | null
         }
         Relationships: []
       }

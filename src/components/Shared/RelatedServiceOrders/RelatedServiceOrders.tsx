@@ -102,10 +102,14 @@ export default function RelatedServiceOrders({
 
           {!readOnly && (
             <Button
+              type="button"
               size="xs"
               variant="light"
               leftSection={<FaPlus size={10} />}
-              onClick={() => router.push(`/dashboard/serviceorders/new`)}
+              onClick={() => {
+                const targetUrl = `/dashboard/serviceorders/new/${jobId}`;
+                router.push(targetUrl);
+              }}
               style={{
                 background: "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
                 color: "white",

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import {
   createColumnHelper,
   getCoreRowModel,
@@ -43,6 +44,7 @@ import {
 import dayjs from "dayjs";
 import { DateInput } from "@mantine/dates";
 import { usePlantMasterTable } from "@/hooks/usePlantMasterTable";
+import { useSupabase } from "@/hooks/useSupabase";
 
 // Define the shape based on our View
 type PlantMasterRow = {
@@ -51,13 +53,13 @@ type PlantMasterRow = {
   display_id: string;
   client_name: string;
   due_date: string | null;
-  status_raw: string;
   description: string;
   created_at: string;
 };
 
 export default function PlantMasterTable() {
   const router = useRouter();
+  const { supabase, isAuthenticated } = useSupabase();
 
   // --- Table State ---
   const [pagination, setPagination] = useState<PaginationState>({
@@ -67,6 +69,41 @@ export default function PlantMasterTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [inputFilters, setInputFilters] = useState<ColumnFiltersState>([]);
   const [activeFilters, setActiveFilters] = useState<ColumnFiltersState>([]);
+
+  // Track current pill selection for UI styling
+  const [currentType, setCurrentType] = useState<"ALL" | "JOB" | "SERVICE">(
+    "ALL"
+  );
+
+  // --- 1. Stats Query (Counts for Pills) ---
+  const { data: stats } = useQuery({
+    queryKey: ["plant_master_stats"],
+    queryFn: async () => {
+      // Run counts in parallel
+      const [allRes, jobRes, svcRes] = await Promise.all([
+        supabase
+          .from("plant_master_view" as any)
+          .select("*", { count: "exact", head: true }),
+        supabase
+          .from("plant_master_view" as any)
+          .select("*", { count: "exact", head: true })
+          .eq("record_type", "JOB"),
+        supabase
+          .from("plant_master_view" as any)
+          .select("*", { count: "exact", head: true })
+          .eq("record_type", "SERVICE"),
+      ]);
+
+      return {
+        ALL: allRes.count || 0,
+        JOB: jobRes.count || 0,
+        SERVICE: svcRes.count || 0,
+      };
+    },
+    enabled: isAuthenticated,
+    // Keep stats fresh but don't refetch constantly
+    staleTime: 1000 * 60 * 2,
+  });
 
   // --- Helpers ---
   const setInputFilterValue = (id: string, value: string | null) => {
@@ -89,7 +126,22 @@ export default function PlantMasterTable() {
   const handleClearFilters = () => {
     setInputFilters([]);
     setActiveFilters([]);
+    // Reset pill to ALL as well? Optional. Usually separate.
+    // setCurrentType("ALL");
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
+  // --- Pill Handler ---
+  const handleTypeChange = (type: "ALL" | "JOB" | "SERVICE") => {
+    setCurrentType(type);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+
+    // Update the active filters passed to the hook
+    setActiveFilters((prev) => {
+      const others = prev.filter((f) => f.id !== "record_type");
+      if (type === "ALL") return others;
+      return [...others, { id: "record_type", value: type }];
+    });
   };
 
   // --- Data Fetching ---
@@ -144,10 +196,11 @@ export default function PlantMasterTable() {
       ),
     }),
     columnHelper.accessor("description", {
-      header: "Description",
+      header: "Description / Specs",
       size: 300,
       cell: (info) => {
         const rawValue = info.getValue();
+        // Strip HTML tags if any (reuse the fix from earlier)
         const cleanText = rawValue
           ? String(rawValue).replace(/<[^>]+>/g, " ")
           : "—";
@@ -172,34 +225,11 @@ export default function PlantMasterTable() {
               TBD
             </Text>
           );
-        // Highlight overdue items?
         const isPast = dayjs(date).isBefore(dayjs(), "day");
         return (
           <Text size="sm" fw={isPast ? 700 : 400} c={isPast ? "red" : "dark"}>
             {dayjs(date).format("MMM D, YYYY")}
           </Text>
-        );
-      },
-    }),
-    columnHelper.accessor("status_raw", {
-      header: "Status",
-      size: 120,
-      cell: (info) => {
-        const val = info.getValue();
-        // Simple color mapping
-        const color =
-          val === "confirmed"
-            ? "green"
-            : val === "completed"
-            ? "gray"
-            : val === "tentative"
-            ? "yellow"
-            : "blue";
-
-        return (
-          <Badge color={color} variant="dot" size="sm">
-            {val}
-          </Badge>
         );
       },
     }),
@@ -262,7 +292,7 @@ export default function PlantMasterTable() {
         </Stack>
       </Group>
 
-      {/* FILTERS */}
+      {/* FILTERS ACCORDION */}
       <Accordion variant="contained" radius="md" mb="md">
         <Accordion.Item value="filters">
           <Accordion.Control icon={<FaSearch size={16} />}>
@@ -322,6 +352,74 @@ export default function PlantMasterTable() {
         </Accordion.Item>
       </Accordion>
 
+      {/* STATUS PILLS */}
+      <Group mb="md" align="center">
+        {[
+          { key: "ALL", label: "All Records", count: stats?.ALL || 0 },
+          { key: "JOB", label: "Jobs", count: stats?.JOB || 0 },
+          {
+            key: "SERVICE",
+            label: "Service Orders",
+            count: stats?.SERVICE || 0,
+          },
+        ].map((item) => {
+          const isActive = currentType === item.key;
+
+          // Custom Gradients for Active State
+          const gradients: Record<string, string> = {
+            ALL: "linear-gradient(135deg, #6c63ff 0%, #4a00e0 100%)",
+            JOB: "linear-gradient(135deg, #4da0ff 0%, #0066cc 100%)",
+            SERVICE: "linear-gradient(135deg, #FF9966 0%, #FF5E62 100%)",
+          };
+
+          const gradientsLight: Record<string, string> = {
+            ALL: "linear-gradient(135deg, #e4d9ff 0%, #d7caff 100%)",
+            JOB: "linear-gradient(135deg, #d7e9ff 0%, #c2ddff 100%)",
+            SERVICE: "linear-gradient(135deg, #ffe0d1 0%, #ffcbd1 100%)",
+          };
+
+          return (
+            <Button
+              key={item.key}
+              radius="xl"
+              size="sm"
+              onClick={() =>
+                handleTypeChange(item.key as "ALL" | "JOB" | "SERVICE")
+              }
+              style={{
+                cursor: "pointer",
+                minWidth: 120,
+                background: isActive
+                  ? gradients[item.key]
+                  : gradientsLight[item.key],
+                color: isActive ? "white" : "black",
+                border: "none",
+              }}
+              px={12}
+            >
+              <Group gap={6}>
+                <Text fw={600} size="sm">
+                  {item.label}
+                </Text>
+                <Badge
+                  autoContrast
+                  variant="filled"
+                  radius="xl"
+                  size="sm"
+                  style={{
+                    cursor: "inherit",
+                    background: "white",
+                    color: "black",
+                  }}
+                >
+                  {item.count}
+                </Badge>
+              </Group>
+            </Button>
+          );
+        })}
+      </Group>
+
       {/* TABLE */}
       <ScrollArea style={{ flex: 1 }} type="hover">
         <Table
@@ -361,7 +459,7 @@ export default function PlantMasterTable() {
               <Table.Tr>
                 <Table.Td colSpan={columns.length}>
                   <Center py="xl">
-                    <Text c="dimmed">No records found.</Text>
+                    <Text c="dimmed">No records found matching filters.</Text>
                   </Center>
                 </Table.Td>
               </Table.Tr>
@@ -371,11 +469,14 @@ export default function PlantMasterTable() {
                   key={`${row.original.record_type}-${row.original.id}`}
                   style={{ cursor: "pointer" }}
                   onClick={() => {
-                    // Smart Routing based on type
+                    // Smart Routing
                     if (row.original.record_type === "JOB") {
-                      // Assuming you want to go to the production schedule or install page for jobs
-                      router.push(`/dashboard/installation/${row.original.id}`);
+                      // Jobs route to production schedule
+                      router.push(
+                        `/dashboard/production/schedule/${row.original.id}`
+                      );
                     } else {
+                      // Service orders route to their detail page
                       router.push(
                         `/dashboard/serviceorders/${row.original.id}`
                       );
