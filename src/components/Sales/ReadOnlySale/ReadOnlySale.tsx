@@ -386,7 +386,7 @@ export default function ReadOnlySale({ salesOrderId }: ReadOnlySaleProps) {
                 </Stack>
               </Paper>
 
-              {jobId && <RelatedServiceOrders jobId={jobId} />}
+              {jobId && <RelatedServiceOrders jobId={jobId} readOnly />}
             </Stack>
           </Grid.Col>
 

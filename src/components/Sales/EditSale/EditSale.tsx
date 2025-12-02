@@ -1352,7 +1352,7 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
             </SimpleGrid>
           </Paper>
 
-          {jobId && <RelatedServiceOrders jobId={jobId} />}
+          {jobId && <RelatedServiceOrders jobId={jobId} readOnly />}
 
           <Paper
             withBorder

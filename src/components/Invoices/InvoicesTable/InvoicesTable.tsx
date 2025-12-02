@@ -54,6 +54,7 @@ import { notifications } from "@mantine/notifications";
 import { Tables } from "@/types/db";
 import { useDisclosure } from "@mantine/hooks";
 import AddInvoice from "../AddInvoice/AddInvoice";
+import { useUser } from "@clerk/nextjs";
 
 // 1. Extended Type Definition including nested Shipping fields
 type InvoiceRow = Tables<"invoices"> & {
@@ -67,6 +68,9 @@ type InvoiceRow = Tables<"invoices"> & {
 export default function InvoicesTable() {
   const { supabase, isAuthenticated } = useSupabase();
   const queryClient = useQueryClient();
+  const { user } = useUser();
+  const role = user?.publicMetadata?.role as string | undefined;
+  const canEdit = role === "admin" || role === "reception";
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -364,63 +368,65 @@ export default function InvoicesTable() {
     }),
 
     // --- Actions (Menu) ---
-    columnHelper.display({
-      id: "actions",
-      header: "Actions",
-      size: 80,
-      cell: (info) => {
-        const isPaid = !!info.row.original.paid_at;
-        const isNoCharge = info.row.original.no_charge;
+    canEdit
+      ? columnHelper.display({
+          id: "actions",
+          header: "Actions",
+          size: 80,
+          cell: (info) => {
+            const isPaid = !!info.row.original.paid_at;
+            const isNoCharge = info.row.original.no_charge;
 
-        return (
-          <Menu withinPortal position="bottom-end" shadow="sm">
-            <Menu.Target>
-              <ActionIcon variant="subtle" color="gray">
-                <FaEllipsisH />
-              </ActionIcon>
-            </Menu.Target>
+            return (
+              <Menu withinPortal position="bottom-end" shadow="sm">
+                <Menu.Target>
+                  <ActionIcon variant="subtle" color="gray">
+                    <FaEllipsisH />
+                  </ActionIcon>
+                </Menu.Target>
 
-            <Menu.Dropdown>
-              <Menu.Item
-                leftSection={<FaDollarSign size={14} />}
-                onClick={() =>
-                  togglePaidMutation.mutate({
-                    id: info.row.original.invoice_id,
-                    isPaid: !isPaid,
-                  })
-                }
-                disabled={isNoCharge ? true : false}
-                color={isPaid ? "red" : "green"}
-              >
-                {isPaid ? "Mark Unpaid" : "Mark Paid"}
-              </Menu.Item>
+                <Menu.Dropdown>
+                  <Menu.Item
+                    leftSection={<FaDollarSign size={14} />}
+                    onClick={() =>
+                      togglePaidMutation.mutate({
+                        id: info.row.original.invoice_id,
+                        isPaid: !isPaid,
+                      })
+                    }
+                    disabled={isNoCharge ? true : false}
+                    color={isPaid ? "red" : "green"}
+                  >
+                    {isPaid ? "Mark Unpaid" : "Mark Paid"}
+                  </Menu.Item>
 
-              <Menu.Divider />
+                  <Menu.Divider />
 
-              <Menu.Item
-                leftSection={
-                  isNoCharge ? (
-                    <FaFileInvoiceDollar size={14} />
-                  ) : (
-                    <FaBan size={14} />
-                  )
-                }
-                onClick={() =>
-                  toggleNoChargeMutation.mutate({
-                    id: info.row.original.invoice_id,
-                    noCharge: !isNoCharge,
-                  })
-                }
-                color={isNoCharge ? "blue" : "gray"}
-              >
-                {isNoCharge ? "Revert to Chargeable" : "Mark as No Charge"}
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-        );
-      },
-    }),
-  ];
+                  <Menu.Item
+                    leftSection={
+                      isNoCharge ? (
+                        <FaFileInvoiceDollar size={14} />
+                      ) : (
+                        <FaBan size={14} />
+                      )
+                    }
+                    onClick={() =>
+                      toggleNoChargeMutation.mutate({
+                        id: info.row.original.invoice_id,
+                        noCharge: !isNoCharge,
+                      })
+                    }
+                    color={isNoCharge ? "blue" : "gray"}
+                  >
+                    {isNoCharge ? "Revert to Chargeable" : "Mark as No Charge"}
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            );
+          },
+        })
+      : null,
+  ].filter((col) => col !== null);
 
   const table = useReactTable({
     data: invoices || [],
@@ -488,21 +494,29 @@ export default function InvoicesTable() {
               }}
               style={{ minWidth: 250 }}
             />
-            <Button
-              leftSection={<FaPlus size={14} />}
-              onClick={openAddModal}
-              variant="gradient"
-              gradient={{ from: "#8E2DE2", to: "#4A00E0", deg: 135 }}
-            >
-              Add Invoice
-            </Button>
+            {canEdit && (
+              <Button
+                leftSection={<FaPlus size={14} />}
+                onClick={openAddModal}
+                variant="gradient"
+                gradient={{ from: "#8E2DE2", to: "#4A00E0", deg: 135 }}
+              >
+                Add Invoice
+              </Button>
+            )}
           </Group>
         </Group>
       </Paper>
 
       {/* --- Table Section --- */}
       <ScrollArea style={{ flex: 1 }}>
-        <Table striped stickyHeader highlightOnHover withColumnBorders layout="fixed">
+        <Table
+          striped
+          stickyHeader
+          highlightOnHover
+          withColumnBorders
+          layout="fixed"
+        >
           <Table.Thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <Table.Tr key={headerGroup.id}>

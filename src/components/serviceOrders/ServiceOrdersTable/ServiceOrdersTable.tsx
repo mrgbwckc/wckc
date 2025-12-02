@@ -47,11 +47,16 @@ import {
 import dayjs from "dayjs";
 import { useServiceOrdersTable } from "@/hooks/useServiceOrdersTable";
 import { Views } from "@/types/db";
+import { useUser } from "@clerk/nextjs";
 
 // Define shape based on the View structure
 type ServiceOrderView = Views<"service_orders_table_view">;
 
 export default function ServiceOrdersTable() {
+  const { user } = useUser();
+  const role = user?.publicMetadata?.role as string | undefined;
+  const canEdit =
+    role === "admin" || role === "service" || role === "installation";
   const router = useRouter();
 
   // --- State Management ---
@@ -293,17 +298,19 @@ export default function ServiceOrdersTable() {
           </Stack>
         </Group>
 
-        <Button
-          onClick={() => router.push("/dashboard/serviceorders/new")}
-          leftSection={<FaPlus size={14} />}
-          style={{
-            background: "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
-            color: "white",
-            border: "none",
-          }}
-        >
-          New Service Order
-        </Button>
+        {canEdit && (
+          <Button
+            onClick={() => router.push("/dashboard/serviceorders/new")}
+            leftSection={<FaPlus size={14} />}
+            style={{
+              background: "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
+              color: "white",
+              border: "none",
+            }}
+          >
+            New Service Order
+          </Button>
+        )}
       </Group>
 
       {/* Filters Accordion */}

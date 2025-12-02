@@ -25,11 +25,14 @@ import {
   Timeline,
   TimelineItem,
   Grid,
+  ThemeIcon,
+  Badge,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import dayjs from "dayjs";
 import { notifications } from "@mantine/notifications";
 import {
+  FaArrowLeft,
   FaCalendarCheck,
   FaCheck,
   FaCheckCircle,
@@ -284,23 +287,60 @@ export default function EditProductionSchedulePage({
           overflowX: "hidden",
         }}
       >
+        <Paper
+          p="md"
+          radius={0}
+          shadow="sm"
+          style={{
+            borderBottom: "1px solid #e0e0e0",
+            zIndex: 10,
+            background: "white",
+          }}
+        >
+          <Group justify="space-between" align="center">
+            <Group gap="md">
+              <ThemeIcon
+                size={48}
+                radius="md"
+                variant="gradient"
+                gradient={{ from: "#8E2DE2", to: "#4A00E0", deg: 135 }}
+              >
+                <FaCalendarCheck size={22} />
+              </ThemeIcon>
+              <Stack gap={0}>
+                <Group gap="sm">
+                  <Text fw={700} size="xl" style={{ color: "#343a40" }}>
+                    Job #{data.job_number}
+                  </Text>
+                  {form.values.rush && (
+                    <Badge
+                      color="red"
+                      variant="filled"
+                      leftSection={<FaFire size={10} />}
+                    >
+                      RUSH
+                    </Badge>
+                  )}
+                </Group>
+                <Text size="sm" c="dimmed">
+                  Production Schedule & Status
+                </Text>
+              </Stack>
+            </Group>
+            <Button
+              variant="default"
+              leftSection={<FaArrowLeft size={12} />}
+              onClick={() => router.back()}
+            >
+              Back
+            </Button>
+          </Group>
+        </Paper>
         <Grid>
           <Grid.Col span={10}>
             <Stack>
               {/* HEADER */}
               <Paper p="md" radius="md" shadow="sm" bg="gray.1">
-                <Group align="center">
-                  <Text
-                    fw={600}
-                    size="lg"
-                    style={{ display: "flex", alignItems: "center" }}
-                  >
-                    Job #{data.job_number}{" "}
-                    <FaFire size={16} color="red" style={{ marginLeft: 4 }} />
-                  </Text>
-                </Group>
-                <Divider my="sm" color="purple" />
-
                 {/* CLIENT & CABINET */}
                 <SimpleGrid cols={2}>
                   <ClientInfo shipping={data.sales_orders} />

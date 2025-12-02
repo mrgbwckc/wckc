@@ -21,10 +21,12 @@ import { Tables } from "@/types/db";
 
 interface RelatedServiceOrdersProps {
   jobId: number | null | undefined;
+  readOnly?: boolean;
 }
 
 export default function RelatedServiceOrders({
   jobId,
+  readOnly,
 }: RelatedServiceOrdersProps) {
   const { supabase, isAuthenticated } = useSupabase();
   const router = useRouter();
@@ -97,19 +99,22 @@ export default function RelatedServiceOrders({
           <Text fw={600} size="lg">
             Related Service Orders
           </Text>
-          <Button
-            size="xs"
-            variant="light"
-            leftSection={<FaPlus size={10} />}
-            onClick={() => router.push(`/dashboard/serviceorders/new`)}
-            style={{
-              background: "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
-              color: "white",
-              border: "none",
-            }}
-          >
-            New Service Order
-          </Button>
+
+          {!readOnly && (
+            <Button
+              size="xs"
+              variant="light"
+              leftSection={<FaPlus size={10} />}
+              onClick={() => router.push(`/dashboard/serviceorders/new`)}
+              style={{
+                background: "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
+                color: "white",
+                border: "none",
+              }}
+            >
+              New Service Order
+            </Button>
+          )}
         </Group>
 
         {relatedServiceOrders && relatedServiceOrders.length > 0 ? (
