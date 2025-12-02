@@ -48,15 +48,13 @@ import dayjs from "dayjs";
 import { useServiceOrdersTable } from "@/hooks/useServiceOrdersTable";
 import { Views } from "@/types/db";
 import { useUser } from "@clerk/nextjs";
+import { usePermissions } from "@/hooks/usePermissions";
 
 // Define shape based on the View structure
 type ServiceOrderView = Views<"service_orders_table_view">;
 
 export default function ServiceOrdersTable() {
-  const { user } = useUser();
-  const role = user?.publicMetadata?.role as string | undefined;
-  const canEdit =
-    role === "admin" || role === "service" || role === "installation";
+  const { canEditServiceOrders } = usePermissions();
   const router = useRouter();
 
   // --- State Management ---
@@ -298,7 +296,7 @@ export default function ServiceOrdersTable() {
           </Stack>
         </Group>
 
-        {canEdit && (
+        {canEditServiceOrders && (
           <Button
             onClick={() => router.push("/dashboard/serviceorders/new")}
             leftSection={<FaPlus size={14} />}

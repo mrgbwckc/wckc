@@ -55,6 +55,7 @@ import { Tables } from "@/types/db";
 import { useDisclosure } from "@mantine/hooks";
 import AddInvoice from "../AddInvoice/AddInvoice";
 import { useUser } from "@clerk/nextjs";
+import { usePermissions } from "@/hooks/usePermissions";
 
 // 1. Extended Type Definition including nested Shipping fields
 type InvoiceRow = Tables<"invoices"> & {
@@ -68,9 +69,7 @@ type InvoiceRow = Tables<"invoices"> & {
 export default function InvoicesTable() {
   const { supabase, isAuthenticated } = useSupabase();
   const queryClient = useQueryClient();
-  const { user } = useUser();
-  const role = user?.publicMetadata?.role as string | undefined;
-  const canEdit = role === "admin" || role === "reception";
+  const { canEditInvoices } = usePermissions();
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -368,7 +367,7 @@ export default function InvoicesTable() {
     }),
 
     // --- Actions (Menu) ---
-    canEdit
+    canEditInvoices
       ? columnHelper.display({
           id: "actions",
           header: "Actions",
@@ -494,7 +493,7 @@ export default function InvoicesTable() {
               }}
               style={{ minWidth: 250 }}
             />
-            {canEdit && (
+            {canEditInvoices && (
               <Button
                 leftSection={<FaPlus size={14} />}
                 onClick={openAddModal}

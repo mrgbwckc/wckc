@@ -2,27 +2,16 @@
 
 import EditSale from "@/components/Sales/EditSale/EditSale";
 import ReadOnlySale from "@/components/Sales/ReadOnlySale/ReadOnlySale";
-import { useUser } from "@clerk/nextjs";
-import { Center, Loader } from "@mantine/core";
 import { useParams } from "next/navigation";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function EditSalePage() {
   const params = useParams();
-  const { user, isLoaded } = useUser();
   const salesOrderId = Number(params.id);
-  if (!isLoaded) {
-    return (
-      <Center h="100vh">
-        <Loader color="violet" />
-      </Center>
-    );
-  }
 
-  const role = user?.publicMetadata?.role as string | undefined;
+  const { canEditSales } = usePermissions();
 
-  const canEdit = role === "admin" || role === "designer";
-
-  if (canEdit) {
+  if (canEditSales) {
     return <EditSale salesOrderId={salesOrderId} />;
   }
 

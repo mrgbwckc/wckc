@@ -2,25 +2,13 @@
 
 import PurchasingTable from "@/components/Purchasing/PurchasingTable/PurchasingTable";
 import ReadOnlyPurchasing from "@/components/Purchasing/ReadOnlyPurchasingTable/ReadOnlyPurchasingTable";
-import { useUser } from "@clerk/nextjs";
-import { Center, Loader } from "@mantine/core";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function PurchasingPage() {
-  const { user, isLoaded } = useUser();
-  if (!isLoaded) {
-    return (
-      <Center h="100vh">
-        <Loader color="violet" />
-      </Center>
-    );
-  }
+  const { canEditPurchasing } = usePermissions();
 
-  const role = user?.publicMetadata?.role as string | undefined;
-
-  const canEdit = role === "admin" || role === "scheduler";
-
-  if (canEdit) {
+  if (canEditPurchasing) {
     return <PurchasingTable />;
   }
-  return <ReadOnlyPurchasing/>
+  return <ReadOnlyPurchasing />;
 }
