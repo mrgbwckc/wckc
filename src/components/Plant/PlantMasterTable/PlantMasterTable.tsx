@@ -472,9 +472,7 @@ export default function PlantMasterTable() {
                     // Smart Routing
                     if (row.original.record_type === "JOB") {
                       // Jobs route to production schedule
-                      router.push(
-                        `/dashboard/production/schedule/${row.original.id}`
-                      );
+                      router.push(`/dashboard/installation/${row.original.id}`);
                     } else {
                       // Service orders route to their detail page
                       router.push(

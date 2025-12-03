@@ -66,7 +66,7 @@ type JobData = Tables<"jobs"> & {
     cabinet: JoinedCabinet | null;
   };
 };
-
+type ProductionScheduleType = Tables<"production_schedule">;
 // --- Helper Components ---
 const SectionTitle = ({
   icon: Icon,
@@ -194,7 +194,48 @@ export default function ReadOnlyInstallation({ jobId }: { jobId: number }) {
   const prod = jobData?.production_schedule;
   const shipping = jobData?.sales_orders;
   const cabinet = shipping?.cabinet;
-
+  const productionScheduledSteps: {
+    key: keyof ProductionScheduleType;
+    label: string;
+    icon: React.ReactNode;
+  }[] = [
+    {
+      key: "placement_date",
+      label: "Placement Date",
+      icon: <FaIndustry size={12} />,
+    },
+    {
+      key: "doors_in_schedule",
+      label: "Doors In",
+      icon: <FaDoorOpen size={12} />,
+    },
+    {
+      key: "doors_out_schedule",
+      label: "Doors Out",
+      icon: <FaDoorOpen size={12} />,
+    },
+    {
+      key: "cut_finish_schedule",
+      label: "Cut Finish",
+      icon: <FaCut size={12} />,
+    },
+    {
+      key: "cut_melamine_schedule",
+      label: "Cut Melamine",
+      icon: <FaCut size={12} />,
+    },
+    {
+      key: "paint_in_schedule",
+      label: "Paint In",
+      icon: <FaPaintBrush size={12} />,
+    },
+    {
+      key: "paint_out_schedule",
+      label: "Paint Out",
+      icon: <FaPaintBrush size={12} />,
+    },
+    { key: "assembly_schedule", label: "Assembly", icon: <FaCogs size={12} /> },
+  ];
   // --- Production Timeline Data ---
   const actualSteps = useMemo(() => {
     if (!prod) return [];
@@ -338,9 +379,55 @@ export default function ReadOnlyInstallation({ jobId }: { jobId: number }) {
             <Stack gap="md">
               {/* Client & Specs */}
               <Paper p="md" radius="md" shadow="xs" withBorder>
-                <SimpleGrid cols={2} spacing="xl" verticalSpacing="lg">
+                <SimpleGrid cols={3} spacing="xl" verticalSpacing="lg">
                   <ClientInfo shipping={shipping} />
                   {cabinet && <CabinetSpecs cabinet={cabinet} />}
+                  {prod && (
+                    <Paper
+                      p="md"
+                      radius="md"
+                      shadow="sm"
+                      style={{ background: "#ffffffff" }}
+                    >
+                      <Text
+                        fw={600}
+                        size="lg"
+                        mb="md"
+                        c="#4A00E0"
+                        style={{ display: "flex", alignItems: "center" }}
+                      >
+                        <FaCogs style={{ marginRight: 8 }} /> Production
+                        Schedule
+                      </Text>
+                      <Stack gap="xs">
+                        {productionScheduledSteps.map((step) => (
+                          <Group
+                            key={step.key}
+                            justify="space-between"
+                            wrap="nowrap"
+                          >
+                            <Group gap="xs" wrap="nowrap">
+                              {step.icon}
+                              <Text size="sm" fw={500}>
+                                {step.label}:
+                              </Text>
+                            </Group>
+                            <Text
+                              size="sm"
+                              c={prod[step.key] ? "dark" : "dimmed"}
+                              style={{ whiteSpace: "nowrap" }}
+                            >
+                              {prod[step.key]
+                                ? dayjs(prod[step.key] as string).format(
+                                    "YYYY-MM-DD"
+                                  )
+                                : "—"}
+                            </Text>
+                          </Group>
+                        ))}
+                      </Stack>
+                    </Paper>
+                  )}
                 </SimpleGrid>
               </Paper>
 
