@@ -22,6 +22,7 @@ export const ServiceOrderSchema = z.object({
   service_by_detail: z.string().optional(),
   hours_estimated: z.number().min(0).optional(),
   chargeable: z.boolean().optional().default(false),
+  is_warranty_so: z.boolean().optional().default(false),
   comments: z.string().optional(),
 
   parts: z.array(ServiceOrderPartSchema).optional().default([]),

@@ -191,6 +191,7 @@ export default function EditServiceOrder({
       service_by_detail: "",
       hours_estimated: 0,
       chargeable: false,
+      is_warranty_so: false,
       comments: "",
       parts: [],
     },
@@ -215,6 +216,7 @@ export default function EditServiceOrder({
         service_by_detail: serviceOrderData.service_by_detail || "",
         hours_estimated: serviceOrderData.hours_estimated || 0,
         chargeable: serviceOrderData.chargeable || false,
+        is_warranty_so: serviceOrderData.is_warranty_so || false,
         comments: serviceOrderData.comments || "",
         completed_at: serviceOrderData.completed_at
           ? new Date(serviceOrderData.completed_at)
@@ -249,6 +251,7 @@ export default function EditServiceOrder({
           service_by_detail: values.service_by_detail,
           hours_estimated: values.hours_estimated,
           chargeable: values.chargeable,
+          is_warranty_so: values.is_warranty_so,
           comments: values.comments,
           completed_at: values.completed_at,
         })
@@ -479,6 +482,14 @@ export default function EditServiceOrder({
                     color="violet"
                     label="Chargeable"
                     {...form.getInputProps("chargeable", { type: "checkbox" })}
+                  />
+                  <Switch
+                    size="md"
+                    color="violet"
+                    label="Warranty Order"
+                    {...form.getInputProps("is_warranty_so", {
+                      type: "checkbox",
+                    })}
                   />
                   <Switch
                     label="Mark as Completed"

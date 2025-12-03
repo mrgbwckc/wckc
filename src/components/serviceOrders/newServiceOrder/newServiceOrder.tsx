@@ -89,6 +89,7 @@ export default function NewServiceOrder({
       service_by_detail: "",
       hours_estimated: 0,
       chargeable: false,
+      is_warranty_so: false,
       comments: "",
       parts: [],
     },
@@ -156,6 +157,7 @@ export default function NewServiceOrder({
           service_by_detail: values.service_by_detail,
           hours_estimated: values.hours_estimated,
           chargeable: values.chargeable,
+          is_warranty_so: values.is_warranty_so,
           comments: values.comments,
         })
         .select("service_order_id")
@@ -358,6 +360,15 @@ export default function NewServiceOrder({
                   mt="md"
                   label="Chargeable"
                   {...form.getInputProps("chargeable", { type: "checkbox" })}
+                />
+                <Switch
+                  size="md"
+                  color="violet"
+                  mt="md"
+                  label="Warranty Order"
+                  {...form.getInputProps("is_warranty_so", {
+                    type: "checkbox",
+                  })}
                 />
               </Fieldset>
             </Stack>
