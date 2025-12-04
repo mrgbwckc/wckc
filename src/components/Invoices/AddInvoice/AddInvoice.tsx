@@ -99,21 +99,22 @@ export default function AddInvoice({ opened, onClose }: AddInvoiceProps) {
       >
         <Stack gap="md">
           <SimpleGrid cols={2}>
-            <TextInput
-              label="Invoice Number"
-              placeholder="e.g. 27000..."
-              withAsterisk
-              data-autofocus
-              {...form.getInputProps("invoice_number")}
-            />
-
             <Select
               label="Link to Job"
               placeholder="Search Job Number"
               data={jobOptions || []}
               searchable
               withAsterisk
+              clearable
               {...form.getInputProps("job_id")}
+            />
+            <TextInput
+              label="Invoice Number"
+              placeholder="e.g. 27000..."
+              withAsterisk
+              data-autofocus
+              disabled={!form.values.job_id}
+              {...form.getInputProps("invoice_number")}
             />
           </SimpleGrid>
 
@@ -122,6 +123,7 @@ export default function AddInvoice({ opened, onClose }: AddInvoiceProps) {
               label="Date Entered"
               placeholder="YYYY-MM-DD"
               valueFormat="YYYY-MM-DD"
+              disabled={!form.values.job_id}
               clearable
               {...form.getInputProps("date_entered")}
             />
@@ -130,6 +132,7 @@ export default function AddInvoice({ opened, onClose }: AddInvoiceProps) {
               placeholder="YYYY-MM-DD"
               valueFormat="YYYY-MM-DD"
               clearable
+              disabled={!form.values.job_id}
               minDate={
                 form.values.date_entered instanceof Date
                   ? form.values.date_entered
@@ -142,6 +145,7 @@ export default function AddInvoice({ opened, onClose }: AddInvoiceProps) {
           <Switch
             label="No Charge"
             color="#8400ffff"
+            disabled={!form.values.job_id}
             styles={{
               track: {
                 cursor: "pointer",
@@ -156,6 +160,7 @@ export default function AddInvoice({ opened, onClose }: AddInvoiceProps) {
           <Textarea
             label="Comments"
             placeholder="Additional notes..."
+            disabled={!form.values.job_id}
             minRows={3}
             {...form.getInputProps("comments")}
           />
@@ -167,8 +172,12 @@ export default function AddInvoice({ opened, onClose }: AddInvoiceProps) {
             <Button
               type="submit"
               loading={createMutation.isPending}
+              disabled={!form.values.job_id}
               style={{
-                background: "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
+                background: !form.values.job_id
+                  ? "#ccc"
+                  : "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
+                color: !form.values.job_id ? "#000000ff" : "white",
               }}
             >
               Create Invoice
