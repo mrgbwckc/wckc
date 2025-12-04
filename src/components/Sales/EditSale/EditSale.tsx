@@ -28,14 +28,12 @@ import {
   Box,
   Autocomplete,
   Modal,
-  Table,
-  ActionIcon,
-  Tooltip,
   Checkbox,
   Collapse,
+  Radio,
+  Textarea,
 } from "@mantine/core";
-import { DateInput } from "@mantine/dates";
-import { FaCopy, FaPlus, FaTools, FaEye, FaCheckCircle } from "react-icons/fa";
+import { FaCopy, FaPlus, FaCheckCircle, FaCircle } from "react-icons/fa";
 import { useSupabase } from "@/hooks/useSupabase";
 import {
   MasterOrderInput,
@@ -46,7 +44,6 @@ import {
   DeliveryTypeOptions,
   DrawerBoxOptions,
   DrawerHardwareOptions,
-  FinishOptions,
   flooringClearanceOptions,
   flooringTypeOptions,
   InteriorOptions,
@@ -54,8 +51,8 @@ import {
   TopDrawerFrontOptions,
 } from "@/dropdowns/dropdownOptions";
 import { useJobBaseNumbers } from "@/hooks/useJobBaseNumbers";
-import dayjs from "dayjs";
 import RelatedServiceOrders from "@/components/Shared/RelatedServiceOrders/RelatedServiceOrders";
+import AddClient from "@/components/Clients/AddClient/AddClient";
 
 const FEATURE_MANUAL_JOB_ENTRY = true;
 
@@ -77,7 +74,6 @@ interface ExtendedMasterOrderInput extends MasterOrderInput {
   manual_job_suffix?: string;
 }
 
-// State type for new door style
 interface NewDoorStyleState {
   name: string;
   model: string;
@@ -100,7 +96,6 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
   const [doorStyleSearch, setDoorStyleSearch] = useState("");
   const [newItemValue, setNewItemValue] = useState("");
 
-  // Object state for Door Style modal
   const [newDoorStyle, setNewDoorStyle] = useState<NewDoorStyleState>({
     name: "",
     model: "",
@@ -119,8 +114,7 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
     { open: openDoorStyleModal, close: closeDoorStyleModal },
   ] = useDisclosure(false);
 
-  const { data: jobBaseOptions, isLoading: jobsLoading } =
-    useJobBaseNumbers(isAuthenticated);
+  // --- Data Fetching ---
 
   const { data: colorsData, isLoading: colorsLoading } = useQuery<
     { Id: number; Name: string }[]
@@ -151,6 +145,7 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
     },
     enabled: isAuthenticated,
   });
+
   type DoorStyleOptionData = Pick<Tables<"door_styles">, "id" | "name">;
   const { data: doorStylesData, isLoading: doorStylesLoading } = useQuery<
     DoorStyleOptionData[]
@@ -181,12 +176,14 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
     }));
   }, [speciesData]);
 
-  const doorStyleOptions = useMemo<ReferenceOption[]>(() => {
+  const doorStylesOptions = useMemo<ReferenceOption[]>(() => {
     return (doorStylesData || []).map((d) => ({
       value: String(d.id),
       label: d.name,
     }));
   }, [doorStylesData]);
+
+  // --- Reference Data Mutations ---
 
   const addSpeciesMutation = useMutation({
     mutationFn: async (name: string) => {
@@ -280,6 +277,8 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
       }),
   });
 
+  // --- Main Sales Order Data ---
+
   const { data: salesOrderData, isLoading: salesOrderLoading } = useQuery({
     queryKey: ["sales-order", salesOrderId],
     queryFn: async () => {
@@ -302,50 +301,21 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
         .single();
 
       if (error) throw error;
-      const transformedData = {
-        ...data,
-        cabinet: {
-          ...data.cabinet,
-          species_name:
-            data.cabinet.species_name?.[0]?.Species ||
-            data.cabinet.species_name,
-          color_name:
-            data.cabinet.color_name?.[0]?.Name || data.cabinet.color_name,
-          door_style_name:
-            data.cabinet.door_style_name?.[0]?.name ||
-            data.cabinet.door_style_name,
-        },
-      };
-
-      return transformedData as any;
+      return data as any;
     },
     enabled: isAuthenticated && !!salesOrderId,
   });
 
   const jobId = salesOrderData?.job?.id;
 
-  const { data: relatedServiceOrders } = useQuery({
-    queryKey: ["related-service-orders", jobId],
-    queryFn: async () => {
-      if (!jobId) return [];
-      const { data, error } = await supabase
-        .from("service_orders")
-        .select("*")
-        .eq("job_id", jobId)
-        .order("date_entered", { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: isAuthenticated && !!jobId,
-  });
-
   const { data: clientsData, isLoading: clientsLoading } = useQuery({
     queryKey: ["clients-list"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("client")
-        .select("*")
+        .select(
+          "id, lastName, street, city, province, zip, phone1, email1, phone2, email2"
+        )
         .order("lastName");
 
       if (error) throw error;
@@ -362,6 +332,8 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
     }));
   }, [clientsData]);
 
+  // --- Form Setup ---
+
   const form = useForm<ExtendedMasterOrderInput>({
     initialValues: {
       client_id: 0,
@@ -375,12 +347,12 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
       manual_job_base: undefined,
       manual_job_suffix: "",
       is_memo: false,
+      flooring_type: "",
+      flooring_clearance: "",
       cabinet: {
         species: "",
         color: "",
         door_style: "",
-        finish: "",
-        glaze: "",
         top_drawer_front: "",
         interior: "",
         drawer_box: "",
@@ -388,7 +360,6 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
         box: "",
         piece_count: "",
         glass_type: "",
-        hinge_soft_close: false,
         doors_parts_only: false,
         handles_supplied: false,
         handles_selected: false,
@@ -405,22 +376,11 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
         shipping_email_1: "",
         shipping_email_2: "",
       },
-      checklist: {
-        layout_date: null,
-        client_meeting_date: null,
-        follow_up_date: null,
-        appliance_specs_date: null,
-        selections_date: null,
-        markout_date: null,
-        review_date: null,
-        second_markout_date: null,
-        flooring_type: "",
-        flooring_clearance: "",
-      },
     },
     validate: zodResolver(MasterOrderSchema),
   });
 
+  // Populate Form
   useEffect(() => {
     if (salesOrderData) {
       const cabinet = salesOrderData.cabinet;
@@ -436,12 +396,13 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
         manual_job_base: salesOrderData.job?.job_base_number,
         manual_job_suffix: salesOrderData.job?.job_suffix || "",
         is_memo: salesOrderData.is_memo,
+        flooring_type: salesOrderData.flooring_type || "",
+        flooring_clearance: salesOrderData.flooring_clearance || "",
         cabinet: {
           species: String(cabinet.species_id || ""),
           color: String(cabinet.color_id || ""),
           door_style: String(cabinet.door_style_id || ""),
-          finish: cabinet.finish,
-          glaze: cabinet.glaze,
+
           top_drawer_front: cabinet.top_drawer_front,
           interior: cabinet.interior,
           drawer_box: cabinet.drawer_box,
@@ -449,7 +410,6 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
           box: cabinet.box,
           piece_count: cabinet.piece_count,
           glass_type: cabinet.glass_type,
-          hinge_soft_close: cabinet.hinge_soft_close ?? false,
           doors_parts_only: cabinet.doors_parts_only ?? false,
           handles_supplied: cabinet.handles_supplied ?? false,
           handles_selected: cabinet.handles_selected ?? false,
@@ -466,18 +426,6 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
           shipping_email_1: salesOrderData.shipping_email_1 || "",
           shipping_email_2: salesOrderData.shipping_email_2 || "",
         },
-        checklist: {
-          layout_date: salesOrderData.layout_date || null,
-          client_meeting_date: salesOrderData.client_meeting_date || null,
-          follow_up_date: salesOrderData.follow_up_date || null,
-          appliance_specs_date: salesOrderData.appliance_specs_date || null,
-          selections_date: salesOrderData.selections_date || null,
-          markout_date: salesOrderData.markout_date || null,
-          review_date: salesOrderData.review_date || null,
-          second_markout_date: salesOrderData.second_markout_date || null,
-          flooring_type: salesOrderData.flooring_type || "",
-          flooring_clearance: salesOrderData.flooring_clearance || "",
-        },
       });
       setSelectedClientData(salesOrderData.client);
     }
@@ -486,9 +434,7 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
   const copyClientToShipping = () => {
     if (!selectedClientData) return;
     form.setFieldValue("shipping", {
-      shipping_client_name: `${selectedClientData.firstName ?? ""} ${
-        selectedClientData.lastName
-      }`,
+      shipping_client_name: `${selectedClientData.lastName}`,
       shipping_street: selectedClientData.street ?? "",
       shipping_city: selectedClientData.city ?? "",
       shipping_province: selectedClientData.province ?? "",
@@ -503,16 +449,23 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
   const updateMutation = useMutation({
     mutationFn: async (values: ExtendedMasterOrderInput) => {
       if (!user) throw new Error("User not authenticated");
-
+      const effectiveIsMemo =
+        values.is_memo === true ||
+        values.manual_job_suffix?.toLowerCase().includes("x") ||
+        false;
       const cabinetPayload = {
+        species_id: values.cabinet.species
+          ? Number(values.cabinet.species)
+          : null,
+        color_id: values.cabinet.color ? Number(values.cabinet.color) : null,
+        door_style_id: values.cabinet.door_style
+          ? Number(values.cabinet.door_style)
+          : null,
         box: values.cabinet.box,
-        finish: values.cabinet.finish,
-        glaze: values.cabinet.glaze,
         top_drawer_front: values.cabinet.top_drawer_front,
         interior: values.cabinet.interior,
         drawer_box: values.cabinet.drawer_box,
         drawer_hardware: values.cabinet.drawer_hardware,
-        hinge_soft_close: values.cabinet.hinge_soft_close,
         doors_parts_only: values.cabinet.doors_parts_only,
         handles_supplied: values.cabinet.handles_supplied,
         handles_selected: values.cabinet.handles_selected,
@@ -521,13 +474,6 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
         piece_count: values.cabinet.doors_parts_only
           ? values.cabinet.piece_count
           : "",
-        species_id: values.cabinet.species
-          ? Number(values.cabinet.species)
-          : null,
-        color_id: values.cabinet.color ? Number(values.cabinet.color) : null,
-        door_style_id: values.cabinet.door_style
-          ? Number(values.cabinet.door_style)
-          : null,
       };
 
       await supabase
@@ -546,9 +492,10 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
           comments: values.comments,
           order_type: values.order_type,
           delivery_type: values.delivery_type,
-          is_memo: values.is_memo,
+          is_memo: effectiveIsMemo,
+          flooring_type: values.flooring_type,
+          flooring_clearance: values.flooring_clearance,
           ...values.shipping,
-          ...values.checklist,
         })
         .eq("id", salesOrderId);
 
@@ -622,6 +569,9 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
       queryClient.invalidateQueries({
         queryKey: ["sales-order", salesOrderId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["sales_table"],
+      });
       router.push("/dashboard");
     },
     onError: (err: any) => {
@@ -660,6 +610,11 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
     updateMutation.mutate(values);
   };
 
+  const isMemoChecked =
+    form.values.stage === "SOLD" &&
+    (form.values.is_memo === true ||
+      form.values.manual_job_suffix?.toLowerCase().includes("x"));
+
   return (
     <Container
       size="100%"
@@ -683,139 +638,70 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
           overflowY: "auto",
         }}
       >
-        <Stack>
-          <Paper p="md" radius="md" shadow="xl">
-            <Group>
-              <Text fw={600} size="md" c="#4c00ffff">
-                {salesOrderData
-                  ? salesOrderData.stage === "SOLD"
-                    ? `Editing Job # ${salesOrderData.job?.job_number || "—"}`
-                    : `Editing Quote #${
-                        salesOrderData.sales_order_number || "—"
-                      }`
-                  : "Loading..."}
-              </Text>
-              <Switch
-                onLabel="Memo"
-                offLabel="Memo ?"
-                size="xl"
-                thumbIcon={<FaCheckCircle />}
-                checked={form.values.is_memo}
-                onChange={(e) =>
-                  form.setFieldValue("is_memo", e.currentTarget.checked)
-                }
-                styles={{
-                  track: {
-                    cursor: "pointer",
-                    background: form.values.is_memo
-                      ? "linear-gradient(135deg, #28a745 0%, #218838 100%)"
-                      : "linear-gradient(135deg, #6c63ff 0%, #4a00e0 100%)",
-                    color: "white",
-                    border: "none",
-                    padding: "0 0.2rem",
-                    width: "6rem",
-                  },
-                  thumb: {
-                    background: form.values.is_memo ? "#218838" : "#4a00e0",
-                  },
-                }}
-              />
-            </Group>
-            <Group align="end" mt="md" style={{ width: "100%" }}>
-              {salesOrderData?.stage !== "SOLD" && (
-                <Paper p="xs" px="md" shadow="0">
-                  <Switch
-                    offLabel="Quote"
-                    onLabel="Sold"
-                    size="xl"
-                    color="green"
-                    checked={form.values.stage === "SOLD"}
-                    onChange={(e) =>
-                      form.setFieldValue(
-                        "stage",
-                        e.currentTarget.checked ? "SOLD" : "QUOTE"
-                      )
-                    }
-                  />
-                </Paper>
-              )}
-              <Select
-                label="Suggest Job Base #"
-                placeholder="Search existing jobs..."
-                data={jobBaseOptions || []}
-                searchable
-                clearable
-                disabled={form.values.stage != "SOLD"}
-                style={{ flex: 1 }}
-                styles={{
-                  dropdown: {
-                    boxShadow: "var(--mantine-shadow-xl)",
-                    borderColor: "var(--mantine-color-gray-4)",
-                    borderWidth: "1px",
-                    borderStyle: "solid",
-                    backgroundColor: "var(--mantine-color-gray-2)",
-                  },
-                  root: { maxWidth: "200px" },
-                }}
-                comboboxProps={{
-                  position: "bottom",
-                  middlewares: { flip: false, shift: false },
-                  offset: 0,
-                }}
-                value={
-                  form.values.manual_job_base
-                    ? String(form.values.manual_job_base)
-                    : null
-                }
-                onChange={(val) => {
-                  if (val) {
-                    form.setFieldValue("manual_job_base", Number(val));
-                  } else {
-                    form.setFieldValue("manual_job_base", undefined);
+        <Stack gap={5}>
+          {/* 1. MASTER DETAILS */}
+          <Paper p="md" radius="md" shadow="xl" withBorder>
+            <SimpleGrid cols={3}>
+              <Group align="end">
+                <Switch
+                  offLabel="Quote"
+                  onLabel="Sold"
+                  size="xl"
+                  thumbIcon={<FaCheckCircle />}
+                  styles={{
+                    track: {
+                      cursor: "pointer",
+                      background:
+                        form.values.stage === "SOLD"
+                          ? "linear-gradient(135deg, #28a745 0%, #218838 100%)"
+                          : "linear-gradient(135deg, #6c63ff 0%, #4a00e0 100%)",
+                      color: "white",
+                      border: "none",
+                      padding: "0 0.2rem",
+                      width: "6rem",
+                    },
+                    thumb: {
+                      background:
+                        form.values.stage === "SOLD" ? "#218838" : "#4a00e0",
+                    },
+                  }}
+                  checked={form.values.stage === "SOLD"}
+                  onChange={(e) =>
+                    form.setFieldValue(
+                      "stage",
+                      e.currentTarget.checked ? "SOLD" : "QUOTE"
+                    )
                   }
-                }}
-              />
-              {form.values.stage === "SOLD" && FEATURE_MANUAL_JOB_ENTRY && (
-                <Group gap="xs" align="flex-end" style={{ flex: 1 }}>
-                  <NumberInput
-                    label="Job #"
-                    placeholder="40000..."
-                    allowNegative={false}
-                    {...form.getInputProps("manual_job_base")}
-                    style={{ width: 120 }}
-                    withAsterisk
-                  />
-                  <TextInput
-                    label="Variant"
-                    placeholder="A, B..."
-                    {...form.getInputProps("manual_job_suffix")}
-                    style={{ width: 80 }}
-                    maxLength={5}
-                  />
-                </Group>
-              )}
+                />
 
-              {!FEATURE_MANUAL_JOB_ENTRY &&
-                salesOrderData?.stage === "SOLD" && (
-                  <Box my="auto">
-                    <Badge
-                      size="lg"
-                      color="green"
-                      style={{
-                        background:
-                          "linear-gradient(135deg, #28a745 0%, #218838 100%)",
-                        color: "white",
-                        border: "none",
+                <Collapse in={form.values.stage === "SOLD"}>
+                  <Group gap="xs" align="flex-end" style={{ flex: 1 }}>
+                    <NumberInput
+                      label="Job #"
+                      placeholder="40000..."
+                      allowNegative={false}
+                      {...form.getInputProps("manual_job_base")}
+                      style={{ width: 120 }}
+                      withAsterisk
+                    />
+                    <TextInput
+                      label="Variant"
+                      placeholder="A, B..."
+                      {...form.getInputProps("manual_job_suffix")}
+                      onChange={(event) => {
+                        const value = event.currentTarget.value;
+                        form.setFieldValue("manual_job_suffix", value);
+                        form.setFieldValue(
+                          "is_memo",
+                          value.toLowerCase().includes("x")
+                        );
                       }}
-                    >
-                      {(() => {
-                        const jobNum = salesOrderData?.job?.job_number;
-                        if (!jobNum) return "—";
-                        return jobNum;
-                      })()}
-                    </Badge>
-                  </Box>
-                )}
+                      style={{ width: 80 }}
+                      maxLength={5}
+                    />
+                  </Group>
+                </Collapse>
+              </Group>
 
               <Select
                 label="Switch Client"
@@ -858,7 +744,7 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                     borderWidth: "1px",
                     borderStyle: "solid",
                   },
-                  root: { maxWidth: "40%" },
+                  root: { width: "100%" },
                 }}
                 {...form.getInputProps("client_id")}
                 renderOption={({ option }) => {
@@ -905,9 +791,45 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                   });
                 }}
               />
-            </Group>
+
+              <Switch
+                onLabel="Memo"
+                offLabel="Memo"
+                size="xl"
+                thumbIcon={isMemoChecked ? <FaCheckCircle /> : <FaCircle />}
+                checked={!!isMemoChecked}
+                onChange={(e) =>
+                  form.setFieldValue(
+                    "is_memo",
+                    e.currentTarget.checked ? true : false
+                  )
+                }
+                disabled
+                styles={{
+                  track: {
+                    cursor: "pointer",
+                    background: isMemoChecked
+                      ? "linear-gradient(135deg, #28a745 0%, #218838 100%)"
+                      : "linear-gradient(135deg, #ddddddff 0%, #dadadaff 100%)",
+                    color: isMemoChecked ? "white" : "black",
+                    border: "none",
+                    padding: "0 0.2rem",
+                    width: "6rem",
+                  },
+                  thumb: {
+                    background: isMemoChecked ? "#218838" : "#ffffffff",
+                  },
+                  root: {
+                    display: "flex",
+                    alignItems: "flex-end",
+                    justifyContent: "flex-end",
+                  },
+                }}
+              />
+            </SimpleGrid>
           </Paper>
 
+          {/* 2. BILLING & SHIPPING */}
           {selectedClientData ? (
             <SimpleGrid
               cols={{ base: 1, lg: 2 }}
@@ -1053,9 +975,36 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
             </Center>
           )}
 
-          <Paper p="md" bg={"gray.1"}>
+          {/* 3. MAIN FORM GRID */}
+          <Paper p="md" withBorder bg={"gray.1"}>
             <SimpleGrid cols={{ base: 1, xl: 2 }} spacing={30}>
+              {/* LEFT COLUMN: Cabinet Specs */}
               <Stack>
+                <Fieldset
+                  legend="Basic Information"
+                  variant="filled"
+                  bg={"white"}
+                >
+                  <SimpleGrid cols={2} mt="sm">
+                    <Autocomplete
+                      label="Order Type"
+                      withAsterisk
+                      placeholder="Single Fam, Multi Fam, Reno..."
+                      data={OrderTypeOptions}
+                      {...form.getInputProps("order_type")}
+                    />
+                    <Select
+                      label="Delivery Type"
+                      withAsterisk
+                      placeholder="Pickup, Delivery..."
+                      data={DeliveryTypeOptions}
+                      searchable
+                      nothingFoundMessage="No delivery type found"
+                      {...form.getInputProps("delivery_type")}
+                    />
+                  </SimpleGrid>
+                </Fieldset>
+
                 <Fieldset
                   legend="Cabinet Specifications"
                   variant="filled"
@@ -1113,7 +1062,7 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                     <Select
                       label="Door Style"
                       placeholder="Select Door Style"
-                      data={doorStyleOptions}
+                      data={doorStylesOptions}
                       searchable
                       searchValue={doorStyleSearch}
                       onSearchChange={setDoorStyleSearch}
@@ -1138,51 +1087,54 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                       {...form.getInputProps(`cabinet.door_style`)}
                     />
                     <Autocomplete
-                      label="Finish"
-                      placeholder="Select or type Finish"
-                      data={FinishOptions}
-                      {...form.getInputProps(`cabinet.finish`)}
-                    />
-                    <TextInput
-                      label="Glaze"
-                      {...form.getInputProps(`cabinet.glaze`)}
-                    />
-                    <Autocomplete
                       label="Top Drawer Front"
                       placeholder="Select or type Top Drawer Front"
                       data={TopDrawerFrontOptions}
                       {...form.getInputProps(`cabinet.top_drawer_front`)}
                     />
-                  </SimpleGrid>
-
-                  <SimpleGrid cols={4} mt="md">
-                    <TextInput
-                      label="Box"
-                      {...form.getInputProps(`cabinet.box`)}
-                    />
                     <Autocomplete
                       label="Interior Material"
-                      placeholder="Select or type Interior Material"
+                      placeholder="Select Interior Material"
                       data={InteriorOptions}
                       {...form.getInputProps(`cabinet.interior`)}
                     />
                     <Autocomplete
                       label="Drawer Box"
-                      placeholder="Select or type Drawer Box"
+                      placeholder="Select Drawer Box"
                       data={DrawerBoxOptions}
                       {...form.getInputProps(`cabinet.drawer_box`)}
                     />
+                  </SimpleGrid>
+
+                  <SimpleGrid cols={4} mt="md">
+                    <Autocomplete
+                      label="Box"
+                      data={[]}
+                      {...form.getInputProps(`cabinet.box`)}
+                    />
                     <Autocomplete
                       label="Drawer Hardware"
-                      placeholder="Select or type Drawer Hardware"
+                      placeholder="Select Drawer Hardware"
                       data={DrawerHardwareOptions}
                       {...form.getInputProps(`cabinet.drawer_hardware`)}
+                    />
+                    <Autocomplete
+                      label="Flooring Type"
+                      placeholder="Hardwood, Tile, etc."
+                      data={flooringTypeOptions}
+                      {...form.getInputProps(`flooring_type`)}
+                    />
+                    <Autocomplete
+                      label="Flooring Clearance"
+                      placeholder="3/8, 1/2, etc."
+                      data={flooringClearanceOptions}
+                      {...form.getInputProps(`flooring_clearance`)}
                     />
                   </SimpleGrid>
 
                   <Divider mt="md" />
 
-                  <SimpleGrid cols={2} mt="md">
+                  <SimpleGrid cols={3} mt="md">
                     <Stack gap={5}>
                       <Switch
                         label="Glass Doors Required"
@@ -1220,23 +1172,9 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                         {...form.getInputProps(`cabinet.piece_count`)}
                       />
                     </Stack>
-                  </SimpleGrid>
-
-                  <Divider mt="md" />
-
-                  <SimpleGrid cols={2} mt="md">
-                    <Group>
-                      <Switch
-                        label="Soft Close Hinges"
-                        size="md"
-                        color="#4a00e0"
-                        {...form.getInputProps(`cabinet.hinge_soft_close`, {
-                          type: "checkbox",
-                        })}
-                      />
+                    <Stack justify="center" align="end">
                       <Switch
                         label="Handles Supplied"
-                        size="md"
                         color="#4a00e0"
                         {...form.getInputProps(`cabinet.handles_supplied`, {
                           type: "checkbox",
@@ -1244,29 +1182,62 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                       />
                       <Switch
                         label="Handles Selected"
-                        size="md"
                         color="#4a00e0"
                         {...form.getInputProps(`cabinet.handles_selected`, {
                           type: "checkbox",
                         })}
                       />
-                    </Group>
+                    </Stack>
                   </SimpleGrid>
+                  <Divider mt="md" />
+                </Fieldset>
+              </Stack>
+
+              {/* RIGHT COLUMN: Details & Financials */}
+              <Stack>
+                <Fieldset legend="Details" variant="filled" bg={"white"}>
+                  <Textarea
+                    label="Comments"
+                    minRows={10}
+                    styles={{ input: { minHeight: "200px" } }}
+                    {...form.getInputProps("comments")}
+                  />
+
+                  <Radio.Group
+                    label="Installation Required"
+                    withAsterisk
+                    mt="md"
+                    value={
+                      form.values.install === true
+                        ? "true"
+                        : form.values.install === false
+                        ? "false"
+                        : ""
+                    }
+                    onChange={(val) =>
+                      form.setFieldValue("install", val === "true")
+                    }
+                    error={form.errors.install}
+                  >
+                    <Group mt="xs">
+                      <Radio value="true" label="Yes" color="#4a00e0" />
+                      <Radio value="false" label="No" color="#4a00e0" />
+                    </Group>
+                  </Radio.Group>
                 </Fieldset>
 
-                <Fieldset
-                  legend="Financials"
-                  variant="filled"
-                  bg={"white"}
-                  mt="md"
-                >
+                <Fieldset legend="Financials" variant="filled" bg={"white"}>
                   <SimpleGrid cols={3}>
                     <NumberInput
-                      label="Total"
+                      label="Total Amount"
+                      prefix="$"
+                      min={0}
                       {...form.getInputProps("total")}
                     />
                     <NumberInput
                       label="Deposit"
+                      prefix="$"
+                      min={0}
                       {...form.getInputProps("deposit")}
                     />
                     <TextInput
@@ -1280,107 +1251,6 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                   </SimpleGrid>
                 </Fieldset>
               </Stack>
-
-              <Stack>
-                <Fieldset legend="Checklist" variant="filled" bg={"white"}>
-                  <SimpleGrid cols={3}>
-                    <Box w="100%">
-                      <DateInput
-                        label="Layout"
-                        clearable
-                        {...form.getInputProps(`checklist.layout_date`)}
-                      />
-                    </Box>
-                    <DateInput
-                      label="Client Meeting"
-                      clearable
-                      {...form.getInputProps(`checklist.client_meeting_date`)}
-                    />
-                    <DateInput
-                      label="Follow Up"
-                      clearable
-                      {...form.getInputProps(`checklist.follow_up_date`)}
-                    />
-                  </SimpleGrid>
-
-                  <SimpleGrid cols={3} mt="sm">
-                    <DateInput
-                      label="Appliance Specs"
-                      clearable
-                      {...form.getInputProps(`checklist.appliance_specs_date`)}
-                    />
-                    <DateInput
-                      label="Selections"
-                      clearable
-                      {...form.getInputProps(`checklist.selections_date`)}
-                    />
-                    <DateInput
-                      label="Measure (Markout)"
-                      clearable
-                      {...form.getInputProps(`checklist.markout_date`)}
-                    />
-                  </SimpleGrid>
-
-                  <SimpleGrid cols={3} mt="sm">
-                    <DateInput
-                      label="Review"
-                      clearable
-                      {...form.getInputProps(`checklist.review_date`)}
-                    />
-                    <DateInput
-                      label="Second Markout"
-                      clearable
-                      {...form.getInputProps(`checklist.second_markout_date`)}
-                    />
-                  </SimpleGrid>
-                </Fieldset>
-
-                <Fieldset legend="Details" variant="filled" bg={"white"}>
-                  <TextInput
-                    label="Comments"
-                    {...form.getInputProps("comments")}
-                  />
-                  <SimpleGrid cols={2} mt="sm">
-                    <Autocomplete
-                      label="Order Type"
-                      placeholder="Single Fam, Multi Fam, Reno..."
-                      data={OrderTypeOptions}
-                      {...form.getInputProps("order_type")}
-                    />
-                    <Select
-                      label="Delivery Type"
-                      placeholder="Pickup, Delivery..."
-                      data={DeliveryTypeOptions}
-                      searchable
-                      nothingFoundMessage="No delivery type found"
-                      {...form.getInputProps("delivery_type")}
-                    />
-                  </SimpleGrid>
-                  <SimpleGrid cols={2} mt="sm">
-                    <Autocomplete
-                      label="Flooring Type"
-                      placeholder="Hardwood, Tile, etc."
-                      data={flooringTypeOptions}
-                      {...form.getInputProps(`checklist.flooring_type`)}
-                    />
-                    <Autocomplete
-                      label="Flooring Clearance"
-                      placeholder="3/8, 1/2, etc."
-                      data={flooringClearanceOptions}
-                      {...form.getInputProps(`checklist.flooring_clearance`)}
-                    />
-                  </SimpleGrid>
-                  <Switch
-                    color="#4a00e0"
-                    mt="md"
-                    label="Installation Required"
-                    style={{
-                      display: "inline-flex",
-                    }}
-                    {...form.getInputProps("install", { type: "checkbox" })}
-                  />
-                </Fieldset>
-              </Stack>
             </SimpleGrid>
           </Paper>
 
@@ -1389,6 +1259,7 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
           <Paper
             withBorder
             p="md"
+            radius="md"
             pos="sticky"
             bottom={0}
             style={{ zIndex: 10 }}
@@ -1420,7 +1291,6 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
                   color: "white",
                   border: "none",
                 }}
-                onClick={() => form.onSubmit(handleSubmit)()}
               >
                 Update Sale
               </Button>
@@ -1429,6 +1299,7 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
         </Stack>
       </form>
 
+      {/* --- MODALS --- */}
       <Modal
         opened={speciesModalOpened}
         onClose={closeSpeciesModal}
@@ -1498,19 +1369,12 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
             }
             data-autofocus
           />
-          <TextInput
-            label="Model Name"
-            value={newDoorStyle.model}
-            onChange={(e) =>
-              setNewDoorStyle((prev) => ({ ...prev, model: e.target.value }))
-            }
-          />
+
           <Group>
             <Checkbox
               label="Pre-Manufactured"
               checked={newDoorStyle.is_pre_manufactured}
               onChange={(e) => {
-                // Fix: Capture value outside the state setter callback to avoid event pooling issues
                 const isChecked = e.currentTarget.checked;
                 setNewDoorStyle((prev) => ({
                   ...prev,
@@ -1522,7 +1386,6 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
               label="Made In House"
               checked={newDoorStyle.is_made_in_house}
               onChange={(e) => {
-                // Fix: Capture value outside the state setter callback
                 const isChecked = e.currentTarget.checked;
                 setNewDoorStyle((prev) => ({
                   ...prev,
@@ -1544,6 +1407,14 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
           </Group>
         </Stack>
       </Modal>
+
+      <AddClient
+        opened={isAddClientModalOpen}
+        onClose={() => {
+          setIsAddClientModalOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["clients-list"] });
+        }}
+      />
     </Container>
   );
 }

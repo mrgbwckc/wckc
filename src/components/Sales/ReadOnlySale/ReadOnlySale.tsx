@@ -8,17 +8,13 @@ import {
   Group,
   Stack,
   Text,
-  SimpleGrid,
   Badge,
   Divider,
   Loader,
   Center,
   Button,
-  Table,
   ThemeIcon,
   Box,
-  Tooltip,
-  ActionIcon,
   Grid,
   Title,
 } from "@mantine/core";
@@ -26,27 +22,20 @@ import {
   FaUser,
   FaBoxOpen,
   FaClipboardList,
-  FaCalendarAlt,
-  FaTools,
-  FaArrowLeft,
-  FaCheck,
-  FaTimes,
-  FaEye,
   FaMoneyBillWave,
   FaTruck,
   FaLayerGroup,
+  FaArrowLeft,
+  FaCheck,
+  FaTimes,
 } from "react-icons/fa";
 import { useSupabase } from "@/hooks/useSupabase";
 import dayjs from "dayjs";
-import { Tables } from "@/types/db";
 import RelatedServiceOrders from "@/components/Shared/RelatedServiceOrders/RelatedServiceOrders";
 
-// --- Types ---
 type ReadOnlySaleProps = {
   salesOrderId: number;
 };
-
-// --- Helper Components ---
 
 const SectionTitle = ({ icon: Icon, title }: { icon: any; title: string }) => (
   <Group mb="sm" gap="xs">
@@ -105,34 +94,10 @@ const BooleanBadge = ({ value, label }: { value: boolean; label: string }) => (
   </Badge>
 );
 
-const DateBlock = ({
-  label,
-  date,
-}: {
-  label: string;
-  date: string | null | undefined;
-}) => (
-  <Box
-    p={8}
-    bg="gray.0"
-    style={{ borderRadius: 6, border: "1px solid #f1f3f5" }}
-  >
-    <Text size="xs" c="dimmed" mb={2}>
-      {label}
-    </Text>
-    <Text size="sm" fw={600} c={date ? "dark" : "dimmed"}>
-      {date ? dayjs(date).format("MMM D, YYYY") : "Pending"}
-    </Text>
-  </Box>
-);
-
-// --- Main Component ---
-
 export default function ReadOnlySale({ salesOrderId }: ReadOnlySaleProps) {
   const { supabase, isAuthenticated } = useSupabase();
   const router = useRouter();
 
-  // 1. Fetch Sales Order
   const { data: order, isLoading } = useQuery({
     queryKey: ["sales-order-readonly", salesOrderId],
     queryFn: async () => {
@@ -154,7 +119,6 @@ export default function ReadOnlySale({ salesOrderId }: ReadOnlySaleProps) {
 
       if (error) throw error;
 
-      // Safe access to joined data (handling array vs object return from supabase join)
       const cab: any = data.cabinet;
       const flattenedCabinet = {
         ...cab,
@@ -188,7 +152,6 @@ export default function ReadOnlySale({ salesOrderId }: ReadOnlySaleProps) {
   const client = order.client;
   const isSold = order.stage === "SOLD";
 
-  // Address Helper
   const formatAddress = (
     street?: string | null,
     city?: string | null,
@@ -221,7 +184,6 @@ export default function ReadOnlySale({ salesOrderId }: ReadOnlySaleProps) {
           overflowY: "auto",
         }}
       >
-        {/* --- HEADER --- */}
         <Paper p="md" radius="md" shadow="xs" withBorder>
           <Group justify="space-between" align="flex-start">
             <Group align="center">
@@ -284,7 +246,6 @@ export default function ReadOnlySale({ salesOrderId }: ReadOnlySaleProps) {
         </Paper>
 
         <Grid gutter="md">
-          {/* --- LEFT COLUMN: CLIENT & FINANCIALS --- */}
           <Grid.Col span={{ base: 12, md: 4 }}>
             <Stack gap="md">
               <Paper p="md" radius="md" shadow="xs" withBorder>
@@ -378,12 +339,9 @@ export default function ReadOnlySale({ salesOrderId }: ReadOnlySaleProps) {
                   </Paper>
                 </Stack>
               </Paper>
-
-              {jobId && <RelatedServiceOrders jobId={jobId} readOnly />}
             </Stack>
           </Grid.Col>
 
-          {/* --- MIDDLE COLUMN: CABINET SPECS --- */}
           <Grid.Col span={{ base: 12, md: 4 }}>
             <Paper p="md" radius="md" shadow="xs" withBorder h="100%">
               <SectionTitle
@@ -392,16 +350,16 @@ export default function ReadOnlySale({ salesOrderId }: ReadOnlySaleProps) {
               />
 
               <Stack gap="xs" mt="md">
-                <InfoRow label="Species" value={String(cab.species_name)} />
-                <InfoRow label="Color" value={String(cab.color_name)} />
+                <InfoRow
+                  label="Species"
+                  value={String(cab.species_name || "")}
+                />
+                <InfoRow label="Color" value={String(cab.color_name || "")} />
                 <InfoRow
                   label="Door Style"
-                  value={String(cab.door_style_name)}
+                  value={String(cab.door_style_name || "")}
                 />
-                <InfoRow label="Finish" value={cab.finish} />
-                <InfoRow label="Glaze" value={cab.glaze} />
                 <InfoRow label="Top Drawer" value={cab.top_drawer_front} />
-
                 <InfoRow label="Box" value={cab.box} />
                 <InfoRow label="Interior" value={cab.interior} />
                 <InfoRow label="Drawer Box" value={cab.drawer_box} />
@@ -411,21 +369,12 @@ export default function ReadOnlySale({ salesOrderId }: ReadOnlySaleProps) {
                   FEATURES & PARTS
                 </Text>
                 <InfoRow
-                  label="Soft Close"
-                  value={cab.hinge_soft_close ? "Yes" : "No"}
-                />
-                <InfoRow
                   label="Handles Supplied"
                   value={cab.handles_supplied ? "Yes" : "No"}
                 />
                 <InfoRow
                   label="Handles Selected"
                   value={cab.handles_selected ? "Yes" : "No"}
-                />
-                <InfoRow label="Glass Req" value={cab.glass ? "Yes" : "No"} />
-                <InfoRow
-                  label="Parts Only"
-                  value={cab.doors_parts_only ? "Yes" : "No"}
                 />
 
                 {(cab.glass || cab.doors_parts_only) && (
@@ -442,7 +391,6 @@ export default function ReadOnlySale({ salesOrderId }: ReadOnlySaleProps) {
             </Paper>
           </Grid.Col>
 
-          {/* --- RIGHT COLUMN: LOGISTICS & CHECKLIST --- */}
           <Grid.Col span={{ base: 12, md: 4 }}>
             <Stack gap="md" h="100%">
               <Paper p="md" radius="md" shadow="xs" withBorder>
@@ -468,39 +416,20 @@ export default function ReadOnlySale({ salesOrderId }: ReadOnlySaleProps) {
                 <Text size="xs" fw={700} c="violet" mt="xs">
                   Notes
                 </Text>
-                <Text size="sm" c="dimmed" style={{ whiteSpace: "pre-wrap" }}>
+                <Text
+                  size="sm"
+                  c="dimmed"
+                  mih={"100px"}
+                  style={{
+                    whiteSpace: "pre-wrap",
+                    border: "1px solid #dee2e6",
+                    padding: "4px",
+                  }}
+                >
                   {order.comments || "No comments available."}
                 </Text>
               </Paper>
-
-              <Paper
-                p="md"
-                radius="md"
-                shadow="xs"
-                withBorder
-                style={{ flex: 1 }}
-              >
-                <SectionTitle
-                  icon={FaCalendarAlt}
-                  title="Production Checklist"
-                />
-                <SimpleGrid cols={2} spacing="xs" mt="md">
-                  <DateBlock label="Layout" date={order.layout_date} />
-                  <DateBlock label="Meeting" date={order.client_meeting_date} />
-                  <DateBlock label="Measure" date={order.markout_date} />
-                  <DateBlock label="Selections" date={order.selections_date} />
-                  <DateBlock label="Review" date={order.review_date} />
-                  <DateBlock
-                    label="2nd Measure"
-                    date={order.second_markout_date}
-                  />
-                  <DateBlock
-                    label="Appliances"
-                    date={order.appliance_specs_date}
-                  />
-                  <DateBlock label="Follow Up" date={order.follow_up_date} />
-                </SimpleGrid>
-              </Paper>
+              {jobId && <RelatedServiceOrders jobId={jobId} readOnly />}
             </Stack>
           </Grid.Col>
         </Grid>

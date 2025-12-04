@@ -125,7 +125,6 @@ export default function SalesTable() {
 
   const setStageFilter = (stage: string) => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-    // Update active filters directly to trigger server refetch
     setActiveFilters((prev) => {
       const existing = prev.filter((f) => f.id !== "stage");
       if (stage === "ALL") return existing;
@@ -141,18 +140,6 @@ export default function SalesTable() {
 
   const columns = useMemo(
     () => [
-      columnHelper.accessor("sales_order_number", {
-        header: "Id",
-        size: 80,
-        cell: (info) => (
-          <Text
-            size="sm"
-            c={info.row.original.stage === "SOLD" ? "green.8" : "blue.8"}
-          >
-            {info.getValue()}
-          </Text>
-        ),
-      }),
       columnHelper.accessor("job_number", {
         header: "Job Number",
         size: 100,
@@ -202,7 +189,7 @@ export default function SalesTable() {
             .join(", ") || "—",
         {
           id: "shippingAddress",
-          header: "Shipping Address",
+          header: "Site Address",
           size: 200,
           cell: (info) => (
             <Tooltip label={info.getValue()}>
@@ -351,6 +338,15 @@ export default function SalesTable() {
                 value={getInputFilterValue("clientlastName")}
                 onChange={(e) =>
                   setInputFilterValue("clientlastName", e.target.value)
+                }
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              />
+              <TextInput
+                label="Site Address"
+                placeholder="Search Site Address..."
+                value={getInputFilterValue("site_address")}
+                onChange={(e) =>
+                  setInputFilterValue("site_address", e.target.value)
                 }
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               />

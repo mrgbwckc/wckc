@@ -40,6 +40,11 @@ export function useSalesTable({
           case "clientlastName":
             query = query.ilike("shipping_client_name", `%${valStr}%`);
             break;
+          case "site_address":
+            query = query.or(
+              `shipping_street.ilike.%${valStr}%,shipping_city.ilike.%${valStr}%,shipping_province.ilike.%${valStr}%,shipping_zip.ilike.%${valStr}%`
+            );
+            break;
           case "stage":
             if (valStr !== "ALL") {
               query = query.eq("stage", valStr);

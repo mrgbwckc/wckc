@@ -127,7 +127,7 @@ export default function NewSale() {
       const { data, error } = await supabase
         .from("client")
         .select(
-          "id, firstName, lastName, street, city, province, zip, phone1, email1, phone2, email2"
+          "id, lastName, street, city, province, zip, phone1, email1, phone2, email2"
         )
         .order("lastName");
       if (error) throw error;
@@ -514,9 +514,7 @@ export default function NewSale() {
     }
 
     form.setFieldValue(`shipping`, {
-      shipping_client_name: `${selectedClientData.firstName ?? ""} ${
-        selectedClientData.lastName
-      }`,
+      shipping_client_name: `${selectedClientData.lastName}`,
       shipping_street: selectedClientData.street ?? "",
       shipping_city: selectedClientData.city ?? "",
       shipping_province: selectedClientData.province ?? "",
@@ -565,8 +563,9 @@ export default function NewSale() {
     submitMutation.mutate(values);
   };
   const isMemoChecked =
-    form.values.is_memo === true ||
-    form.values.manual_job_suffix?.toLowerCase().includes("x");
+    form.values.stage === "SOLD" &&
+    (form.values.is_memo === true ||
+      form.values.manual_job_suffix?.toLowerCase().includes("x"));
   return (
     <Container
       size="100%"
@@ -786,7 +785,7 @@ export default function NewSale() {
                     e.currentTarget.checked ? true : false
                   );
                 }}
-                disabled={true}
+                disabled
                 styles={{
                   track: {
                     cursor: "not-allowed",

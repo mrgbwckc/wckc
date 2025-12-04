@@ -9,8 +9,6 @@ import {
   Button,
   Table,
   Badge,
-  Tooltip,
-  ActionIcon,
   Center,
   Accordion,
 } from "@mantine/core";
@@ -52,7 +50,13 @@ export default function RelatedServiceOrders({
   // Helper to render table rows to ensure consistency between the main list and accordion
   const renderRows = (orders: Tables<"service_orders">[]) => {
     return orders.map((so) => (
-      <Table.Tr key={so.service_order_id}>
+      <Table.Tr
+        key={so.service_order_id}
+        onClick={() =>
+          router.push(`/dashboard/serviceorders/${so.service_order_id}`)
+        }
+        style={{ cursor: "pointer" }}
+      >
         <Table.Td>
           <Text fw={500} size="sm">
             {so.service_order_number}
@@ -69,19 +73,6 @@ export default function RelatedServiceOrders({
               Open
             </Badge>
           )}
-        </Table.Td>
-        <Table.Td>
-          <Tooltip label="View Details">
-            <ActionIcon
-              variant="subtle"
-              color="blue"
-              onClick={() =>
-                router.push(`/dashboard/serviceorders/${so.service_order_id}`)
-              }
-            >
-              <FaEye />
-            </ActionIcon>
-          </Tooltip>
         </Table.Td>
       </Table.Tr>
     ));
@@ -130,7 +121,6 @@ export default function RelatedServiceOrders({
                   <Table.Th>SO #</Table.Th>
                   <Table.Th>Date Entered</Table.Th>
                   <Table.Th>Status</Table.Th>
-                  <Table.Th>Action</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>{renderRows(visibleOrders)}</Table.Tbody>
