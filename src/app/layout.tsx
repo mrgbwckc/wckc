@@ -46,7 +46,7 @@ const dashboardLinks: SidebarLink[] = [
     label: "Service Orders",
     path: "/dashboard/serviceorders",
   },
-  { iconName: "FaUsers", label: "Clients", path: "/dashboard/clients" },
+
   {
     iconName: "MdFactory",
     label: "Plant",
@@ -68,7 +68,6 @@ const dashboardLinks: SidebarLink[] = [
       },
     ],
   },
-  { iconName: "GoTools", label: "Installers", path: "/dashboard/installers" },
 
   { iconName: "FaFileInvoice", label: "Invoices", path: "/dashboard/invoices" },
   {
@@ -82,6 +81,9 @@ const dashboardLinks: SidebarLink[] = [
       },
     ],
   },
+
+  { iconName: "FaUsers", label: "Clients", path: "/dashboard/clients" },
+  { iconName: "GoTools", label: "Installers", path: "/dashboard/installers" },
 ];
 
 export default function RootLayout({

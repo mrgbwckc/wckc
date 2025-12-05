@@ -1,5 +1,5 @@
-import PlantTable from "@/components/Plant/PlantTable/PlantTable";
+import PlantTableWrap from "@/components/Plant/PlantTableWrap/PlantTableWrap";
 
 export default function PlantPage() {
-  return <PlantTable />;
+  return <PlantTableWrap />;
 }

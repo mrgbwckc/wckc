@@ -1145,11 +1145,15 @@ export type Database = {
           custom_finish_completed_actual: string | null
           cut_finish_completed_actual: string | null
           doors_completed_actual: string | null
+          has_shipped: boolean | null
+          installation_completed: string | null
           installation_id: number | null
           installation_notes: string | null
           job_id: number | null
           job_number: string | null
           paint_completed_actual: string | null
+          partially_shipped: boolean | null
+          ship_schedule: string | null
           shipping_city: string | null
           shipping_province: string | null
           shipping_street: string | null

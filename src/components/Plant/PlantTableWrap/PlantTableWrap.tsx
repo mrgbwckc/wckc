@@ -42,7 +42,7 @@ import { notifications } from "@mantine/notifications";
 import { usePlantTable } from "@/hooks/usePlantTable";
 import { Views } from "@/types/db";
 type PlantTableView = Views<"plant_table_view">;
-export default function PlantTable() {
+export default function PlantTableWrap() {
   const { supabase, isAuthenticated } = useSupabase();
   const queryClient = useQueryClient();
 
