@@ -43,6 +43,7 @@ import CabinetSpecs from "@/components/Shared/CabinetSpecs/CabinetSpecs";
 import ClientInfo from "@/components/Shared/ClientInfo/ClientInfo";
 import RelatedServiceOrders from "@/components/Shared/RelatedServiceOrders/RelatedServiceOrders";
 import RelatedBackorders from "@/components/Shared/RelatedBO/RelatedBO";
+import OrderDetails from "@/components/Shared/OrderDetails/OrderDetails";
 
 // --- Types ---
 type JoinedCabinet = Tables<"cabinets"> & {
@@ -160,6 +161,9 @@ export default function ReadOnlyInstallation({ jobId }: { jobId: number }) {
             shipping_phone_2,
             shipping_email_1,
             shipping_email_2,
+            order_type,
+            delivery_type,
+            install,
             cabinet:cabinets (
               id,
               box,
@@ -193,8 +197,27 @@ export default function ReadOnlyInstallation({ jobId }: { jobId: number }) {
   // --- Derived State ---
   const install = jobData?.installation;
   const prod = jobData?.production_schedule;
-  const shipping = jobData?.sales_orders;
-  const cabinet = shipping?.cabinet;
+  const shipping = jobData?.sales_orders
+    ? {
+        shipping_client_name: jobData.sales_orders.shipping_client_name,
+        shipping_phone_1: jobData.sales_orders.shipping_phone_1,
+        shipping_phone_2: jobData.sales_orders.shipping_phone_2,
+        shipping_email_1: jobData.sales_orders.shipping_email_1,
+        shipping_email_2: jobData.sales_orders.shipping_email_2,
+        shipping_street: jobData.sales_orders.shipping_street,
+        shipping_city: jobData.sales_orders.shipping_city,
+        shipping_province: jobData.sales_orders.shipping_province,
+        shipping_zip: jobData.sales_orders.shipping_zip,
+      }
+    : null;
+  const orderDetails = jobData?.sales_orders
+    ? {
+        order_type: jobData.sales_orders.order_type,
+        delivery_type: jobData.sales_orders.delivery_type,
+        install: jobData.sales_orders.install,
+      }
+    : null;
+  const cabinet = jobData?.sales_orders?.cabinet;
   const productionScheduledSteps: {
     key: keyof ProductionScheduleType;
     label: string;
@@ -376,12 +399,15 @@ export default function ReadOnlyInstallation({ jobId }: { jobId: number }) {
       <Box style={{ flex: 1, overflowY: "auto" }} p="md">
         <Grid gutter="lg">
           {/* LEFT COLUMN: Main Info */}
-          <Grid.Col span={{ base: 12, lg: 9 }}>
+          <Grid.Col span={{ base: 12, lg: 10 }}>
             <Stack gap="md">
               {/* Client & Specs */}
               <Paper p="md" radius="md" shadow="xs" withBorder>
                 <SimpleGrid cols={3} spacing="xl" verticalSpacing="lg">
-                  <ClientInfo shipping={shipping} />
+                  <Stack>
+                    <ClientInfo shipping={shipping} />
+                    <OrderDetails orderDetails={orderDetails} />
+                  </Stack>
                   {cabinet && <CabinetSpecs cabinet={cabinet} />}
                   {prod && (
                     <Paper
@@ -537,7 +563,7 @@ export default function ReadOnlyInstallation({ jobId }: { jobId: number }) {
           </Grid.Col>
 
           {/* RIGHT COLUMN: Timelines */}
-          <Grid.Col span={{ base: 12, lg: 3 }}>
+          <Grid.Col span={{ base: 12, lg: 2 }}>
             <Stack gap="md">
               {/* Installation Phase */}
               <Card shadow="sm" padding="lg" radius="md" withBorder>

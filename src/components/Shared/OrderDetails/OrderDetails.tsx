@@ -1,4 +1,4 @@
-import { Paper, Text, Stack, Group, Badge } from "@mantine/core";
+import { Paper, Text, Group, Badge, SimpleGrid, Stack } from "@mantine/core";
 import { FaClipboardList, FaCheck, FaTimes } from "react-icons/fa";
 import { Tables } from "@/types/db";
 
@@ -6,21 +6,22 @@ interface OrderDetailsProps {
   orderDetails: Partial<Tables<"sales_orders">> | null | undefined;
 }
 
-const InfoRow = ({
+// Helper updated for horizontal layout: Label above Value
+const InfoItem = ({
   label,
   value,
 }: {
   label: string;
   value?: React.ReactNode;
 }) => (
-  <Group justify="space-between" align="center" style={{ minHeight: "24px" }}>
-    <Text size="sm" c="dimmed">
-      <strong>{label}:</strong>
+  <Stack gap={2}>
+    <Text size="xs" c="dimmed" fw={700} tt="uppercase">
+      {label}
     </Text>
-    <Text component="div" size="sm" fw={500} style={{ textAlign: "right" }}>
+    <Text component="div" size="sm" fw={600} style={{ lineHeight: 1.2 }}>
       {value || "—"}
     </Text>
-  </Group>
+  </Stack>
 );
 
 export default function OrderDetails({ orderDetails }: OrderDetailsProps) {
@@ -38,10 +39,11 @@ export default function OrderDetails({ orderDetails }: OrderDetailsProps) {
         <FaClipboardList style={{ marginRight: 8 }} /> Order Details
       </Text>
 
-      <Stack gap={6}>
-        <InfoRow label="Order Type" value={orderDetails.order_type} />
-        <InfoRow label="Delivery Type" value={orderDetails.delivery_type} />
-        <InfoRow
+      {/* Grid layout creates a single row with 3 columns on larger screens */}
+      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
+        <InfoItem label="Order Type" value={orderDetails.order_type} />
+        <InfoItem label="Delivery Type" value={orderDetails.delivery_type} />
+        <InfoItem
           label="Installation"
           value={
             orderDetails.install !== undefined &&
@@ -65,7 +67,7 @@ export default function OrderDetails({ orderDetails }: OrderDetailsProps) {
             )
           }
         />
-      </Stack>
+      </SimpleGrid>
     </Paper>
   );
 }

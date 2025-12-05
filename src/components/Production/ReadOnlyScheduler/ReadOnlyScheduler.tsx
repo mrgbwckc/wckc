@@ -39,6 +39,7 @@ import {
 } from "react-icons/fa";
 import CabinetSpecs from "@/components/Shared/CabinetSpecs/CabinetSpecs";
 import ClientInfo from "@/components/Shared/ClientInfo/ClientInfo";
+import OrderDetails from "@/components/Shared/OrderDetails/OrderDetails";
 
 type CabinetSpecsJoined = Tables<"cabinets"> & {
   door_styles: { name: string } | null;
@@ -123,6 +124,9 @@ export default function ReadOnlyScheduler({ jobId }: { jobId: number }) {
             shipping_email_1,
             shipping_phone_2,
             shipping_email_2,
+            order_type,
+            delivery_type,
+            install,
             cabinet:cabinets (
               id,
               box,
@@ -217,6 +221,26 @@ export default function ReadOnlyScheduler({ jobId }: { jobId: number }) {
 
   const schedule = data.production_schedule;
   const cabinet = data.sales_orders?.cabinet;
+  const shipping = data.sales_orders
+    ? {
+        shipping_client_name: data.sales_orders.shipping_client_name,
+        shipping_phone_1: data.sales_orders.shipping_phone_1,
+        shipping_phone_2: data.sales_orders.shipping_phone_2,
+        shipping_email_1: data.sales_orders.shipping_email_1,
+        shipping_email_2: data.sales_orders.shipping_email_2,
+        shipping_street: data.sales_orders.shipping_street,
+        shipping_city: data.sales_orders.shipping_city,
+        shipping_province: data.sales_orders.shipping_province,
+        shipping_zip: data.sales_orders.shipping_zip,
+      }
+    : null;
+  const orderDetails = data?.sales_orders
+    ? {
+        order_type: data.sales_orders.order_type,
+        delivery_type: data.sales_orders.delivery_type,
+        install: data.sales_orders.install,
+      }
+    : null;
 
   return (
     <Container
@@ -286,7 +310,10 @@ export default function ReadOnlyScheduler({ jobId }: { jobId: number }) {
             <Stack gap="md">
               <Paper p="md" radius="md" shadow="xs" withBorder>
                 <SimpleGrid cols={2} spacing="xl">
-                  <ClientInfo shipping={data.sales_orders} />
+                  <Stack>
+                    <ClientInfo shipping={shipping} />
+                    <OrderDetails orderDetails={orderDetails} />
+                  </Stack>
                   {cabinet && <CabinetSpecs cabinet={cabinet} />}
                 </SimpleGrid>
               </Paper>

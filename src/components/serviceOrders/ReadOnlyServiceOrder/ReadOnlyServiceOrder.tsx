@@ -22,6 +22,7 @@ import {
   rem,
   Typography,
   Table,
+  SimpleGrid,
 } from "@mantine/core";
 import {
   FaUser,
@@ -36,6 +37,9 @@ import {
 } from "react-icons/fa";
 import { useSupabase } from "@/hooks/useSupabase";
 import dayjs from "dayjs";
+import ClientInfo from "@/components/Shared/ClientInfo/ClientInfo";
+import OrderDetails from "@/components/Shared/OrderDetails/OrderDetails";
+import CabinetSpecs from "@/components/Shared/CabinetSpecs/CabinetSpecs";
 
 type ReadOnlyServiceOrderProps = {
   serviceOrderId: string;
@@ -140,7 +144,26 @@ export default function ReadOnlyServiceOrder({
               shipping_zip,
               shipping_client_name,
               shipping_phone_1,
-              shipping_email_1
+              shipping_email_1,
+              order_type,
+              delivery_type,
+              install,
+              cabinet:cabinets (
+                box,
+                glass,
+                interior,
+                drawer_box,
+                drawer_hardware,
+                glass_type,
+                piece_count,
+                doors_parts_only,
+                handles_selected,
+                handles_supplied,
+                top_drawer_front,
+                door_styles(name),
+                species(Species),
+                colors(Name)
+              )
             )
           )
         `
@@ -163,7 +186,27 @@ export default function ReadOnlyServiceOrder({
   }
 
   const job = so.jobs;
-  const shipping = job?.sales_orders;
+  const cabinet = job?.sales_orders?.cabinet;
+  const shipping = job?.sales_orders
+    ? {
+        shipping_client_name: job.sales_orders.shipping_client_name,
+        shipping_phone_1: job.sales_orders.shipping_phone_1,
+        shipping_phone_2: job.sales_orders.shipping_phone_2,
+        shipping_email_1: job.sales_orders.shipping_email_1,
+        shipping_email_2: job.sales_orders.shipping_email_2,
+        shipping_street: job.sales_orders.shipping_street,
+        shipping_city: job.sales_orders.shipping_city,
+        shipping_province: job.sales_orders.shipping_province,
+        shipping_zip: job.sales_orders.shipping_zip,
+      }
+    : null;
+  const orderDetails = job?.sales_orders
+    ? {
+        order_type: job.sales_orders.order_type,
+        delivery_type: job.sales_orders.delivery_type,
+        install: job.sales_orders.install,
+      }
+    : null;
   const installer = so.installers;
   const isCompleted = !!so.completed_at;
   const statusColor = isCompleted ? "green" : "violet";
@@ -245,53 +288,19 @@ export default function ReadOnlyServiceOrder({
 
       <Box style={{ flex: 1, overflowY: "auto" }} p="md">
         <Container size="100%" px="xs">
+          <Paper p="md" radius="md" mb="md" withBorder bg="gray.1">
+            <SimpleGrid cols={2}>
+              <Stack>
+                <ClientInfo shipping={shipping} />
+                <OrderDetails orderDetails={orderDetails} />
+              </Stack>
+              <CabinetSpecs cabinet={cabinet} />
+            </SimpleGrid>
+          </Paper>
+
           <Grid gutter="lg">
             <Grid.Col span={{ base: 12, md: 4 }}>
               <Stack>
-                <Card shadow="sm" padding="lg" radius="md" withBorder>
-                  <SectionTitle
-                    icon={FaUser}
-                    title="Client Details"
-                    color="blue"
-                  />
-                  <Stack gap="xs">
-                    <Group align="center" mb={4}>
-                      <Avatar color="blue" radius="xl">
-                        {shipping?.shipping_client_name?.[0] || "C"}
-                      </Avatar>
-                      <Box>
-                        <Text fw={600} size="md">
-                          {shipping?.shipping_client_name || "Unknown Client"}
-                        </Text>
-                        <Text size="xs" c="dimmed">
-                          Primary Contact
-                        </Text>
-                      </Box>
-                    </Group>
-                    <Divider />
-                    <InfoRow label="Phone" value={shipping?.shipping_phone_1} />
-                    <InfoRow label="Email" value={shipping?.shipping_email_1} />
-                    <Box mt="xs">
-                      <Group gap={6} mb={4}>
-                        <FaMapMarkerAlt size={12} color="#868e96" />
-                        <Text size="xs" fw={700} c="dimmed" tt="uppercase">
-                          Site Address
-                        </Text>
-                      </Group>
-                      <Paper p="xs" bg="gray.0" radius="sm">
-                        <Text size="sm" style={{ lineHeight: 1.4 }}>
-                          {formatAddress(
-                            shipping?.shipping_street,
-                            shipping?.shipping_city,
-                            shipping?.shipping_province,
-                            shipping?.shipping_zip
-                          ) || "No address provided"}
-                        </Text>
-                      </Paper>
-                    </Box>
-                  </Stack>
-                </Card>
-
                 <Card shadow="sm" padding="lg" radius="md" withBorder>
                   <SectionTitle
                     icon={FaHammer}
@@ -361,54 +370,6 @@ export default function ReadOnlyServiceOrder({
                   padding="lg"
                   radius="md"
                   withBorder
-                  style={{
-                    borderTop: `4px solid var(--mantine-color-${statusColor}-5)`,
-                  }}
-                >
-                  <SectionTitle
-                    icon={FaCalendarAlt}
-                    title="Schedule"
-                    color={statusColor}
-                  />
-                  <Stack gap="xs">
-                    <InfoRow
-                      label="Due Date"
-                      value={
-                        so.due_date ? (
-                          <Text c={isCompleted ? "dimmed" : "red.7"} fw={700}>
-                            {dayjs(so.due_date).format("MMM D, YYYY")}
-                          </Text>
-                        ) : (
-                          "TBD"
-                        )
-                      }
-                    />
-                    <InfoRow
-                      label="Est. Hours"
-                      value={
-                        so.hours_estimated ? `${so.hours_estimated} hrs` : "0"
-                      }
-                    />
-                    <InfoRow
-                      label="Completed"
-                      value={
-                        so.completed_at ? (
-                          <Badge color="teal" variant="light">
-                            {dayjs(so.completed_at).format("MMM D, YYYY")}
-                          </Badge>
-                        ) : (
-                          "Pending"
-                        )
-                      }
-                    />
-                  </Stack>
-                </Card>
-
-                <Card
-                  shadow="sm"
-                  padding="lg"
-                  radius="md"
-                  withBorder
                   style={{ flex: 1 }}
                 >
                   <SectionTitle
@@ -442,7 +403,61 @@ export default function ReadOnlyServiceOrder({
             </Grid.Col>
 
             <Grid.Col span={{ base: 12, md: 4 }}>
-              <Card shadow="sm" padding="lg" radius="md" withBorder h="100%">
+              <Card
+                shadow="sm"
+                padding="lg"
+                radius="md"
+                mb="md"
+                withBorder
+                style={{
+                  borderTop: `4px solid var(--mantine-color-${statusColor}-5)`,
+                }}
+              >
+                <SectionTitle
+                  icon={FaCalendarAlt}
+                  title="Schedule"
+                  color={statusColor}
+                />
+                <Stack gap="xs">
+                  <InfoRow
+                    label="Due Date"
+                    value={
+                      so.due_date ? (
+                        <Text c={isCompleted ? "dimmed" : "red.7"} fw={700}>
+                          {dayjs(so.due_date).format("MMM D, YYYY")}
+                        </Text>
+                      ) : (
+                        "TBD"
+                      )
+                    }
+                  />
+                  <InfoRow
+                    label="Est. Hours"
+                    value={
+                      so.hours_estimated ? `${so.hours_estimated} hrs` : "0"
+                    }
+                  />
+                  <InfoRow
+                    label="Completed"
+                    value={
+                      so.completed_at ? (
+                        <Badge color="teal" variant="light">
+                          {dayjs(so.completed_at).format("MMM D, YYYY")}
+                        </Badge>
+                      ) : (
+                        "Pending"
+                      )
+                    }
+                  />
+                </Stack>
+              </Card>
+              <Card
+                shadow="sm"
+                padding="lg"
+                radius="md"
+                withBorder
+                h="fit-content"
+              >
                 <SectionTitle
                   icon={FaBoxOpen}
                   title="Required Parts"

@@ -54,6 +54,7 @@ import CabinetSpecs from "@/components/Shared/CabinetSpecs/CabinetSpecs";
 import ClientInfo from "@/components/Shared/ClientInfo/ClientInfo";
 import { Tables } from "@/types/db";
 import AddInstaller from "@/components/Installers/AddInstaller/AddInstaller";
+import OrderDetails from "@/components/Shared/OrderDetails/OrderDetails";
 
 interface EditServiceOrderProps {
   serviceOrderId: string;
@@ -144,6 +145,9 @@ export default function EditServiceOrder({
               shipping_phone_2,
               shipping_email_1,
               shipping_email_2,
+              order_type,
+              delivery_type,
+              install,
               cabinet:cabinets (
                 box,
                 glass,
@@ -321,7 +325,27 @@ export default function EditServiceOrder({
     );
   }
   const cabinet = serviceOrderData?.jobs?.sales_orders?.cabinet;
-  const shipping = serviceOrderData?.jobs?.sales_orders;
+  const shipping = serviceOrderData?.jobs?.sales_orders
+    ? {
+        shipping_client_name:
+          serviceOrderData.jobs.sales_orders.shipping_client_name,
+        shipping_phone_1: serviceOrderData.jobs.sales_orders.shipping_phone_1,
+        shipping_phone_2: serviceOrderData.jobs.sales_orders.shipping_phone_2,
+        shipping_email_1: serviceOrderData.jobs.sales_orders.shipping_email_1,
+        shipping_email_2: serviceOrderData.jobs.sales_orders.shipping_email_2,
+        shipping_street: serviceOrderData.jobs.sales_orders.shipping_street,
+        shipping_city: serviceOrderData.jobs.sales_orders.shipping_city,
+        shipping_province: serviceOrderData.jobs.sales_orders.shipping_province,
+        shipping_zip: serviceOrderData.jobs.sales_orders.shipping_zip,
+      }
+    : null;
+  const orderDetails = serviceOrderData?.jobs?.sales_orders
+    ? {
+        order_type: serviceOrderData.jobs.sales_orders.order_type,
+        delivery_type: serviceOrderData.jobs.sales_orders.delivery_type,
+        install: serviceOrderData.jobs.sales_orders.install,
+      }
+    : null;
 
   return (
     <Container
@@ -388,7 +412,10 @@ export default function EditServiceOrder({
             <Divider my="sm" color="violet" />
 
             <SimpleGrid cols={2}>
-              {shipping && <ClientInfo shipping={shipping} />}
+              <Stack>
+                <ClientInfo shipping={shipping} />
+                <OrderDetails orderDetails={orderDetails} />
+              </Stack>
               {cabinet && <CabinetSpecs cabinet={cabinet} />}
             </SimpleGrid>
           </Paper>

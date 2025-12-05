@@ -42,6 +42,7 @@ import CustomRichTextEditor from "@/components/RichTextEditor/RichTextEditor";
 import AddInstaller from "@/components/Installers/AddInstaller/AddInstaller";
 import ClientInfo from "@/components/Shared/ClientInfo/ClientInfo";
 import CabinetSpecs from "@/components/Shared/CabinetSpecs/CabinetSpecs";
+import OrderDetails from "@/components/Shared/OrderDetails/OrderDetails";
 interface NewServiceOrderProps {
   preselectedJobId?: string;
 }
@@ -171,6 +172,9 @@ export default function NewServiceOrder({
               shipping_phone_2,
               shipping_email_1,
               shipping_email_2,
+              order_type,
+              delivery_type,
+              install,
               cabinet:cabinets (
                 box,
                 glass,
@@ -206,7 +210,26 @@ export default function NewServiceOrder({
   }, [form.values.job_id]);
 
   const cabinet = jobData?.sales_orders?.cabinet;
-  const client = jobData?.sales_orders;
+  const shipping = jobData?.sales_orders
+    ? {
+        shipping_client_name: jobData.sales_orders.shipping_client_name,
+        shipping_phone_1: jobData.sales_orders.shipping_phone_1,
+        shipping_phone_2: jobData.sales_orders.shipping_phone_2,
+        shipping_email_1: jobData.sales_orders.shipping_email_1,
+        shipping_email_2: jobData.sales_orders.shipping_email_2,
+        shipping_street: jobData.sales_orders.shipping_street,
+        shipping_city: jobData.sales_orders.shipping_city,
+        shipping_province: jobData.sales_orders.shipping_province,
+        shipping_zip: jobData.sales_orders.shipping_zip,
+      }
+    : null;
+  const orderDetails = jobData?.sales_orders
+    ? {
+        order_type: jobData.sales_orders.order_type,
+        delivery_type: jobData.sales_orders.delivery_type,
+        install: jobData.sales_orders.install,
+      }
+    : null;
 
   const submitMutation = useMutation({
     mutationFn: async (values: ServiceOrderFormValues) => {
@@ -324,7 +347,7 @@ export default function NewServiceOrder({
             </Group>
           </Paper>
 
-          <Collapse in={client || cabinet} transitionDuration={200}>
+          <Collapse in={shipping || cabinet} transitionDuration={200}>
             <Paper
               p="md"
               radius="md"
@@ -333,7 +356,10 @@ export default function NewServiceOrder({
             >
               <SimpleGrid cols={2}>
                 {/* CLIENT INFO */}
-                {client && <ClientInfo shipping={client} />}
+                <Stack>
+                  <ClientInfo shipping={shipping} />
+                  <OrderDetails orderDetails={orderDetails} />
+                </Stack>
 
                 {cabinet && <CabinetSpecs cabinet={cabinet} />}
               </SimpleGrid>
