@@ -945,6 +945,7 @@ export type Database = {
           chargeable: boolean | null
           comments: string | null
           completed_at: string | null
+          created_by: string | null
           date_entered: string
           due_date: string | null
           hours_estimated: number | null
@@ -964,6 +965,7 @@ export type Database = {
           chargeable?: boolean | null
           comments?: string | null
           completed_at?: string | null
+          created_by?: string | null
           date_entered?: string
           due_date?: string | null
           hours_estimated?: number | null
@@ -983,6 +985,7 @@ export type Database = {
           chargeable?: boolean | null
           comments?: string | null
           completed_at?: string | null
+          created_by?: string | null
           date_entered?: string
           due_date?: string | null
           hours_estimated?: number | null

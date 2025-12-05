@@ -28,6 +28,7 @@ export const ServiceOrderSchema = z.object({
   installer_requested: z.boolean().optional().default(false),
   parts: z.array(ServiceOrderPartSchema).optional().default([]),
   completed_at: z.coerce.date().nullable().optional(),
+  created_by: z.string().optional(),
 });
 
 export type ServiceOrderPartType = z.infer<typeof ServiceOrderPartSchema>;

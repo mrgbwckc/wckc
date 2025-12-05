@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useForm } from "@mantine/form";
 import { zodResolver } from "@/utils/zodResolver/zodResolver";
@@ -43,9 +43,11 @@ import AddInstaller from "@/components/Installers/AddInstaller/AddInstaller";
 import ClientInfo from "@/components/Shared/ClientInfo/ClientInfo";
 import CabinetSpecs from "@/components/Shared/CabinetSpecs/CabinetSpecs";
 import OrderDetails from "@/components/Shared/OrderDetails/OrderDetails";
+
 interface NewServiceOrderProps {
   preselectedJobId?: string;
 }
+
 export default function NewServiceOrder({
   preselectedJobId,
 }: NewServiceOrderProps) {
@@ -118,6 +120,7 @@ export default function NewServiceOrder({
 
   const [existingSOCount, setExistingSOCount] = useState<number | null>(null);
   const [jobData, setJobData] = useState<any>(null);
+
   useEffect(() => {
     const fetchSoNumber = async () => {
       const jobId = form.values.job_id;
@@ -254,6 +257,7 @@ export default function NewServiceOrder({
           installer_requested: values.installer_requested,
           warranty_order_cost: values.warranty_order_cost,
           comments: values.comments,
+          created_by: user.username || "Staff",
         })
         .select("service_order_id")
         .single();
@@ -347,7 +351,7 @@ export default function NewServiceOrder({
             </Group>
           </Paper>
 
-          <Collapse in={shipping || cabinet} transitionDuration={200}>
+          <Collapse in={!!shipping || !!cabinet} transitionDuration={200}>
             <Paper
               p="md"
               radius="md"
@@ -355,7 +359,6 @@ export default function NewServiceOrder({
               style={{ background: "#fff" }}
             >
               <SimpleGrid cols={2}>
-                {/* CLIENT INFO */}
                 <Stack>
                   <ClientInfo shipping={shipping} />
                   <OrderDetails orderDetails={orderDetails} />
