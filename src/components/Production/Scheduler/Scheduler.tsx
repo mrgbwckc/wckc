@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -48,6 +48,9 @@ import { schedulingSchema } from "@/zod/prod.schema";
 import CabinetSpecs from "@/components/Shared/CabinetSpecs/CabinetSpecs";
 import ClientInfo from "@/components/Shared/ClientInfo/ClientInfo";
 import OrderDetails from "@/components/Shared/OrderDetails/OrderDetails";
+import RelatedBackorders from "@/components/Shared/RelatedBO/RelatedBO";
+import RelatedServiceOrders from "@/components/Shared/RelatedServiceOrders/RelatedServiceOrders";
+import AddBackorderModal from "@/components/Installation/AddBOModal/AddBOModal";
 
 // ---------- Types ----------
 type CabinetSpecsJoined = Tables<"cabinets"> & {
@@ -77,7 +80,8 @@ export default function EditProductionSchedulePage({
   const { supabase, isAuthenticated } = useSupabase();
   const { user } = useUser();
   const queryClient = useQueryClient();
-
+  const [isBackorderPromptOpen, setIsBackorderPromptOpen] = useState(false);
+  const [isAddBackorderModalOpen, setIsAddBackorderModalOpen] = useState(false);
   // ---------- Fetch Job ----------
   const { data, isLoading } = useQuery<JobType>({
     queryKey: ["production-schedule", jobId],
@@ -131,6 +135,16 @@ export default function EditProductionSchedulePage({
     },
     enabled: isAuthenticated && !!jobId,
   });
+  const handleBackorderPromptDecision = (isCompleteShipment: boolean) => {
+    setIsBackorderPromptOpen(false);
+
+    if (isCompleteShipment) {
+      form.setFieldValue("has_shipped", true);
+      form.setFieldValue("partially_shipped", false);
+    } else {
+      setIsAddBackorderModalOpen(true);
+    }
+  };
 
   // ---------- Form ----------
   const form = useForm<SchedulingFormValues>({
@@ -560,6 +574,13 @@ export default function EditProductionSchedulePage({
                 </Paper>
               </Paper>
             </Stack>
+            {jobId && (
+              <RelatedBackorders
+                jobId={String(jobId)}
+                onAddBackorder={() => setIsAddBackorderModalOpen(true)}
+              />
+            )}
+            {jobId && <RelatedServiceOrders jobId={jobId} />}
           </Grid.Col>
 
           {/* TIMELINE */}
@@ -682,6 +703,23 @@ export default function EditProductionSchedulePage({
           </Button>
         </Group>
       </Paper>
+      <AddBackorderModal
+        opened={isAddBackorderModalOpen}
+        onClose={() => setIsAddBackorderModalOpen(false)}
+        jobId={String(jobId)}
+        jobNumber={data.job_number}
+        onSuccess={() => {
+          const newValues = {
+            ...form.values,
+            has_shipped: false,
+            partially_shipped: true,
+          };
+          form.setFieldValue("has_shipped", false);
+          form.setFieldValue("partially_shipped", true);
+
+          //updateMutation.mutate(newValues);
+        }}
+      />
     </Container>
   );
 }

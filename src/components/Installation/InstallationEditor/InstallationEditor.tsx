@@ -158,21 +158,6 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
     enabled: isAuthenticated && !!jobId,
   });
 
-  const { data: relatedServiceOrders } = useQuery({
-    queryKey: ["related-service-orders", jobId],
-    queryFn: async () => {
-      if (!jobId) return [];
-      const { data, error } = await supabase
-        .from("service_orders")
-        .select("*")
-        .eq("job_id", jobId)
-        .order("date_entered", { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: isAuthenticated && !!jobId,
-  });
   const { data: installers, isLoading: isInstallersLoading } = useQuery<
     InstallerLookup[]
   >({
@@ -427,14 +412,8 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
     setIsBackorderPromptOpen(false);
 
     if (isCompleteShipment) {
-      const newValues = {
-        ...form.values,
-        has_shipped: true,
-        partially_shipped: false,
-      };
       form.setFieldValue("has_shipped", true);
       form.setFieldValue("partially_shipped", false);
-      //updateMutation.mutate(newValues);
     } else {
       setIsAddBackorderModalOpen(true);
     }
