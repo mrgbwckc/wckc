@@ -282,6 +282,9 @@ export default function JobDetailsDrawer({
                     {address}
                   </Text>
                 )}
+                <Text size="xs" mt="xs">
+                  Designer: {so?.designer}
+                </Text>
               </Stack>
             </Group>
 
