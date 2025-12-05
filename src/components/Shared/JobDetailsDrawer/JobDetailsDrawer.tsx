@@ -409,7 +409,7 @@ export default function JobDetailsDrawer({
           <Grid>
             <Grid.Col span={7}>
               <Stack gap="xs">
-                <Group justify="space-between">
+                <Group>
                   <Text size="sm" c="dimmed">
                     Installer:
                   </Text>
@@ -499,7 +499,54 @@ export default function JobDetailsDrawer({
           </Grid>
         </Paper>
 
-        {/* --- SECTION 4: RELATED ITEMS --- */}
+        {/* --- NEW SECTION 4: COMMENTS & NOTES --- */}
+        <Paper p="md" radius="md" withBorder shadow="sm">
+          <SectionHeader
+            icon={FaClipboardList}
+            title="Comments & Notes"
+            color="grape"
+          />
+
+          <Stack gap="md">
+            <Box>
+              <Text size="sm" fw={700} c="dark" mb={4}>
+                Sales Order Comments
+              </Text>
+              <Paper p="xs" withBorder bg="gray.0">
+                <Text size="sm" c="dimmed" style={{ whiteSpace: "pre-wrap" }}>
+                  {so?.comments || "No sales comments available."}
+                </Text>
+              </Paper>
+            </Box>
+
+            <Box>
+              <Text size="sm" fw={700} c="dark" mb={4}>
+                Production Notes
+              </Text>
+              <Paper p="xs" withBorder bg="gray.0">
+                <Text size="sm" c="dimmed" style={{ whiteSpace: "pre-wrap" }}>
+                  {prod?.production_comments ||
+                    "No production notes available."}
+                </Text>
+              </Paper>
+            </Box>
+
+            <Box>
+              <Text size="sm" fw={700} c="dark" mb={4}>
+                Installation/Site Notes
+              </Text>
+              <Paper p="xs" withBorder bg="gray.0">
+                <Text size="sm" c="dimmed" style={{ whiteSpace: "pre-wrap" }}>
+                  {install?.installation_notes ||
+                    "No installation notes available."}
+                </Text>
+              </Paper>
+            </Box>
+          </Stack>
+        </Paper>
+        {/* --- END NEW SECTION 4 --- */}
+
+        {/* --- SECTION 5: RELATED ITEMS (Original Section 4) --- */}
         <RelatedServiceOrders jobId={jobId} readOnly />
         <RelatedBackorders jobId={String(jobId)} readOnly />
       </Stack>
