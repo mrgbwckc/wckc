@@ -1,9 +1,9 @@
 "use client";
 
-import { Modal, Loader, Center, Text, rem } from "@mantine/core";
+import { Modal, Loader, Center } from "@mantine/core";
 import dynamic from "next/dynamic";
 import { Views } from "@/types/db";
-import { PlantShippingSchedulePdf } from "@/documents/PlantShippingSchedulePdf";
+import { PlantWrapSchedulePdf } from "@/documents/PlantWrapSchedulePdf";
 
 const PDFViewer = dynamic(
   () => import("@react-pdf/renderer").then((mod) => mod.PDFViewer),
@@ -17,29 +17,29 @@ const PDFViewer = dynamic(
   }
 );
 
-interface ShippingPdfPreviewModalProps {
+interface WrapPdfPreviewModalProps {
   opened: boolean;
   onClose: () => void;
   data: Views<"plant_table_view">[];
   dateRange: [Date | null, Date | null];
 }
 
-export default function ShippingPdfPreviewModal({
+export default function WrapPdfPreviewModal({
   opened,
   onClose,
   data,
   dateRange,
-}: ShippingPdfPreviewModalProps) {
+}: WrapPdfPreviewModalProps) {
   return (
     <Modal
       opened={opened}
       onClose={onClose}
-      title="Shipping Schedule Preview"
+      title="Wrap Schedule Preview"
       fullScreen
       styles={{ body: { height: "calc(100vh - 60px)", padding: 0 } }}
     >
       <PDFViewer style={{ width: "100%", height: "100%", border: "none" }}>
-        <PlantShippingSchedulePdf data={data} dateRange={dateRange} />
+        <PlantWrapSchedulePdf data={data} dateRange={dateRange} />
       </PDFViewer>
     </Modal>
   );

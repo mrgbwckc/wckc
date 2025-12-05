@@ -35,12 +35,21 @@ import {
   Anchor,
 } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
-import { FaSearch, FaCalendarAlt, FaBoxOpen, FaCheck } from "react-icons/fa";
+import {
+  FaSearch,
+  FaCalendarAlt,
+  FaBoxOpen,
+  FaCheck,
+  FaPrint,
+} from "react-icons/fa";
 import { useSupabase } from "@/hooks/useSupabase";
 import dayjs from "dayjs";
 import { notifications } from "@mantine/notifications";
 import { usePlantWrapTable } from "@/hooks/usePlantWrapTable";
 import { Views } from "@/types/db";
+import { useDisclosure } from "@mantine/hooks";
+import WrapPdfPreviewModal from "./WrapPdfPreviewModal";
+import JobDetailsDrawer from "@/components/Shared/JobDetailsDrawer/JobDetailsDrawer";
 type PlantTableView = Views<"plant_table_view">;
 export default function PlantTableWrap() {
   const { supabase, isAuthenticated } = useSupabase();
@@ -60,7 +69,26 @@ export default function PlantTableWrap() {
     null,
     null,
   ]);
+  const [pdfOpened, { open: openPdf, close: closePdf }] = useDisclosure(false);
+  const [drawerJobId, setDrawerJobId] = useState<number | null>(null);
+  const [drawerOpened, { open: openDrawer, close: closeDrawer }] =
+    useDisclosure(false);
 
+  const handleJobClick = (id: number) => {
+    setDrawerJobId(id);
+    openDrawer();
+  };
+  const handlePrintPreview = () => {
+    if (!dateRange[0] || !dateRange[1]) {
+      notifications.show({
+        title: "Date Range Required",
+        message: "Please select a date range filter to generate the report.",
+        color: "orange",
+      });
+      return;
+    }
+    openPdf();
+  };
   const { data, isLoading, isError, error } = usePlantWrapTable({
     pagination,
     columnFilters: activeFilters,
@@ -171,15 +199,21 @@ export default function PlantTableWrap() {
       header: "Job #",
       size: 100,
       cell: (info) => (
-        <Text fw={600} size="sm">
-          <Anchor
-            href={`/dashboard/installation/${info.row.original.job_id}`}
-            style={{ color: "#6100bbff", fontWeight: "bold" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {info.getValue()}
-          </Anchor>
-        </Text>
+        <Anchor
+          component="button"
+          size="sm"
+          fw={600}
+          w="100%"
+          style={{ textAlign: "left" }}
+          c="#6f00ffff"
+          onClick={(e) => {
+            e.stopPropagation();
+            const jobId = info.row.original.job_id;
+            if (jobId) handleJobClick(jobId);
+          }}
+        >
+          <Text fw={600}>{info.getValue()}</Text>
+        </Anchor>
       ),
     }),
     columnHelper.accessor("client_name", {
@@ -341,23 +375,34 @@ export default function PlantTableWrap() {
       display="flex"
       style={{ flexDirection: "column" }}
     >
-      <Group mb="md">
-        <ThemeIcon
-          size={50}
-          radius="md"
-          variant="gradient"
-          gradient={{ from: "#8E2DE2", to: "#4A00E0", deg: 135 }}
+      <Group mb="md" justify="space-between">
+        <Group>
+          <ThemeIcon
+            size={50}
+            radius="md"
+            variant="gradient"
+            gradient={{ from: "#8E2DE2", to: "#4A00E0", deg: 135 }}
+          >
+            <FaCalendarAlt size={26} />
+          </ThemeIcon>
+          <Stack gap={0}>
+            <Title order={2} style={{ color: "#343a40" }}>
+              Plant Wrap Schedule
+            </Title>
+            <Text size="sm" c="dimmed">
+              Track plant wrap schedule
+            </Text>
+          </Stack>
+        </Group>
+
+        <Button
+          variant="outline"
+          color="violet"
+          leftSection={<FaPrint size={14} />}
+          onClick={handlePrintPreview}
         >
-          <FaCalendarAlt size={26} />
-        </ThemeIcon>
-        <Stack gap={0}>
-          <Title order={2} style={{ color: "#343a40" }}>
-            Plant Wrap Schedule
-          </Title>
-          <Text size="sm" c="dimmed">
-            Track plant wrap schedule
-          </Text>
-        </Stack>
+          Print Preview
+        </Button>
       </Group>
 
       <Accordion variant="contained" radius="md" mb="md">
@@ -542,6 +587,17 @@ export default function PlantTableWrap() {
           color="#4A00E0"
         />
       </Box>
+      <WrapPdfPreviewModal
+        opened={pdfOpened}
+        onClose={closePdf}
+        data={tableData}
+        dateRange={dateRange}
+      />
+      <JobDetailsDrawer
+        jobId={drawerJobId}
+        opened={drawerOpened}
+        onClose={closeDrawer}
+      />
     </Box>
   );
 }

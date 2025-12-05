@@ -46,6 +46,7 @@ import {
   FaPlus,
   FaTruckLoading,
   FaShippingFast,
+  FaBoxOpen,
 } from "react-icons/fa";
 
 import CabinetSpecs from "@/components/Shared/CabinetSpecs/CabinetSpecs";
@@ -212,6 +213,7 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
           wrap_date: install.wrap_date
             ? dayjs(install.wrap_date).toDate()
             : null,
+          wrap_completed: install.wrap_completed,
           has_shipped: install.has_shipped,
           partially_shipped: install.partially_shipped || false,
           installation_date: install.installation_date
@@ -446,19 +448,16 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
     const currentValue = form.values[field];
 
     if (currentValue) {
-      // If already set, clear it immediately (Reset behavior)
       form.setFieldValue(field, null);
     } else {
-      // If empty, open modal to prompt for date
       setTargetCompletionField(field);
-      setCompletionDateInput(new Date()); // Default to today
+      setCompletionDateInput(new Date());
       setCompletionModalOpen(true);
     }
   };
 
   const confirmCompletionDate = () => {
     if (targetCompletionField && completionDateInput) {
-      // Use dayjs to ensure consistent ISO formatting
       form.setFieldValue(
         targetCompletionField,
         dayjs(completionDateInput).toISOString()
@@ -620,12 +619,14 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
             <Paper bg={"gray.1"} p="md" radius="md">
               <Paper p="md" radius="md" pb={30}>
                 <Stack gap="xl">
+                  {/* ... [Keep Installer & Key Dates Section] ... */}
                   <Box>
                     <Group mb={8} style={{ color: "#4A00E0" }}>
                       <FaTools size={18} />
                       <Text fw={600}>Installer & Key Dates</Text>
                     </Group>
                     <SimpleGrid cols={3} spacing="md">
+                      {/* ... (Installer Select, Install Date, Inspect Date) ... */}
                       <Group align="flex-end" gap="xs">
                         <Select
                           label="Assigned Installer"
@@ -634,12 +635,12 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                           searchable
                           clearable
                           value={String(form.values.installer_id)}
-                          onChange={(val) => {
+                          onChange={(val) =>
                             form.setFieldValue(
                               "installer_id",
                               val ? Number(val) : null
-                            );
-                          }}
+                            )
+                          }
                           style={{ flex: 1 }}
                         />
                         <Tooltip label="Create New Installer">
@@ -673,13 +674,16 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
 
                   <Divider />
 
+                  {/* --- UPDATED SHIPPING MANAGEMENT SECTION --- */}
                   <Box>
-                    <Group mb={8} style={{ color: "#218838" }}>
+                    <Group mb="md" style={{ color: "#218838" }}>
                       <FaTruckLoading size={18} />
                       <Text fw={600}>Shipping Management</Text>
                     </Group>
-                    <Group style={{ display: "flex" }}>
-                      <SimpleGrid cols={3} spacing="md">
+
+                    <Stack gap="lg">
+                      {/* ROW 1: WRAP MANAGEMENT (2 Columns) */}
+                      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                         <DateInput
                           label="Wrap Date"
                           placeholder="Date Cabinets Wrapped"
@@ -687,7 +691,57 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                           valueFormat="YYYY-MM-DD"
                           {...form.getInputProps("wrap_date")}
                         />
+                        <Box style={{ alignSelf: "flex-end" }}>
+                          <Switch
+                            size="xl"
+                            onLabel="WRAPPED"
+                            offLabel="Not Wrapped"
+                            thumbIcon={<FaBoxOpen size={12} />}
+                            checked={!!form.values.wrap_completed}
+                            onChange={(e) =>
+                              form.setFieldValue(
+                                "wrap_completed",
+                                e.currentTarget.checked
+                                  ? new Date().toISOString()
+                                  : null
+                              )
+                            }
+                            styles={{
+                              track: {
+                                padding: "0 12px",
+                                height: "36px", // Matches standard Input height
+                                cursor: "pointer",
+                                border: "none",
+                                backgroundColor: form.values.wrap_completed
+                                  ? undefined
+                                  : "#e9ecef",
+                                backgroundImage: form.values.wrap_completed
+                                  ? "linear-gradient(135deg, #ae3ec9 0%, #7048e8 100%)" // Grape Gradient
+                                  : "linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%)",
+                                transition: "background 200ms ease",
+                              },
+                              thumb: {
+                                height: "28px",
+                                width: "28px",
+                                backgroundColor: "#fff",
+                                color: form.values.wrap_completed
+                                  ? "#ae3ec9"
+                                  : "#adb5bd",
+                              },
+                              trackLabel: {
+                                color: form.values.wrap_completed
+                                  ? "white"
+                                  : "gray",
+                                fontWeight: 600,
+                                fontSize: "12px",
+                              },
+                            }}
+                          />
+                        </Box>
+                      </SimpleGrid>
 
+                      {/* ROW 2: SHIP MANAGEMENT (3 Columns) */}
+                      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
                         <DateInput
                           label="Scheduled Ship Date"
                           placeholder="Ship Date"
@@ -695,9 +749,9 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                           valueFormat="YYYY-MM-DD"
                           {...form.getInputProps("ship_schedule")}
                         />
+
                         <Select
                           label="Shipping Date Status"
-                          w={"200px"}
                           data={[
                             { value: "unprocessed", label: "Unprocessed" },
                             { value: "tentative", label: "Tentative" },
@@ -710,52 +764,61 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                             ) : null
                           }
                         />
-                      </SimpleGrid>
-                      <Box style={{ alignSelf: "flex-end" }}>
-                        <Group>
+
+                        <Box style={{ alignSelf: "flex-end" }}>
                           <Switch
                             size="xl"
-                            offLabel="Not Shipped"
                             onLabel="SHIPPED"
-                            thumbIcon={<FaTruckLoading />}
-                            color="green"
+                            offLabel="Not Shipped"
+                            thumbIcon={<FaTruckLoading size={12} />}
                             checked={form.values.has_shipped}
                             onChange={(e) =>
                               handleShippedChange(e.currentTarget.checked)
                             }
                             styles={{
                               track: {
-                                padding: "5px",
+                                padding: "0 12px",
+                                height: "36px", // Matches standard Input height
                                 cursor: "pointer",
-                                background: form.values.has_shipped
-                                  ? "linear-gradient(135deg, #28a745 0%, #218838 100%)"
-                                  : "linear-gradient(135deg, #ddddddff 0%, #a7a5a5ff 100%)",
                                 border: "none",
-                                color: form.values.has_shipped
-                                  ? "white"
-                                  : "black",
+                                backgroundColor: form.values.has_shipped
+                                  ? undefined
+                                  : "#e9ecef",
+                                backgroundImage: form.values.has_shipped
+                                  ? "linear-gradient(135deg, #28a745 0%, #218838 100%)" // Green Gradient
+                                  : "linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%)",
                                 transition: "background 200ms ease",
                               },
                               thumb: {
-                                background: form.values.has_shipped
+                                height: "28px",
+                                width: "28px",
+                                backgroundColor: "#fff",
+                                color: form.values.has_shipped
                                   ? "#218838"
-                                  : "#fff",
+                                  : "#adb5bd",
                               },
                               trackLabel: {
-                                color: "white",
+                                color: form.values.has_shipped
+                                  ? "white"
+                                  : "gray",
+                                fontWeight: 600,
+                                fontSize: "12px",
                               },
                             }}
                           />
-                          {form.values.partially_shipped && (
-                            <Tooltip label="This job has been partially shipped. Check Related Backorders for more information...">
-                              <Badge color="orange" size="sm" variant="light">
-                                Partially Shipped
-                              </Badge>
-                            </Tooltip>
-                          )}
+                        </Box>
+                      </SimpleGrid>
+
+                      {form.values.partially_shipped && (
+                        <Group mt={-10}>
+                          <Tooltip label="This job has been partially shipped. Check Related Backorders for more information.">
+                            <Badge color="orange" size="sm" variant="light">
+                              Partially Shipped
+                            </Badge>
+                          </Tooltip>
                         </Group>
-                      </Box>
-                    </Group>
+                      )}
+                    </Stack>
                   </Box>
 
                   <Divider />
@@ -785,7 +848,9 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
             {jobId && <RelatedServiceOrders jobId={jobId} />}
           </Grid.Col>
 
+          {/* ... [Keep Timeline Grid.Col] ... */}
           <Grid.Col span={2} style={{ borderLeft: "1px solid #ccc" }}>
+            {/* ... (Timeline code same as original) ... */}
             <Box pt="md" pos="sticky" style={{ justifyItems: "center" }}>
               <Text
                 fw={600}
@@ -931,6 +996,7 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                 </Timeline>
               </Paper>
             </Box>
+            {/* ... (Actual Progress Timeline same as original) ... */}
             <Box pt="md" style={{ justifyItems: "center" }}>
               <Text
                 fw={600}
@@ -982,9 +1048,7 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                           </Box>
                         }
                         styles={{
-                          item: {
-                            "--tl-color": lineColor,
-                          },
+                          item: { "--tl-color": lineColor },
                           itemTitle: {
                             color: step.isCompleted ? "#28a745" : "#6b6b6b",
                           },
@@ -1008,14 +1072,11 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
         </Grid>
       </form>
 
+      {/* ... [Keep Footer and Modals] ... */}
       <Paper
         p="md"
         bg={"gray.1"}
-        style={{
-          position: "sticky",
-          bottom: 0,
-          zIndex: 10,
-        }}
+        style={{ position: "sticky", bottom: 0, zIndex: 10 }}
       >
         <Group justify="flex-end">
           <Button
@@ -1050,6 +1111,7 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
         </Group>
       </Paper>
 
+      {/* ... [Modals: Backorder Prompt, Add Backorder, Completion Date, Add Installer] ... */}
       <Modal
         opened={isBackorderPromptOpen}
         onClose={() => {
@@ -1066,7 +1128,6 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
         transitionProps={{ transition: "pop", duration: 200 }}
       >
         <Stack align="center" gap="md">
-          {/* Visual Icon */}
           <ThemeIcon
             size={80}
             radius="100%"
@@ -1076,8 +1137,6 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
           >
             <FaTruckLoading size={40} />
           </ThemeIcon>
-
-          {/* Text Content */}
           <Stack gap={4} align="center">
             <Text size="lg" fw={700} ta="center">
               Confirm Shipment Status
@@ -1086,8 +1145,6 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
               Is this a complete shipment, or are items missing?
             </Text>
           </Stack>
-
-          {/* Action Buttons */}
           <Group w="100%" grow mt="md">
             <Button
               variant="outline"
@@ -1110,7 +1167,6 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
               Complete
             </Button>
           </Group>
-
           <Text
             size="xs"
             c="dimmed"
@@ -1139,12 +1195,10 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
             };
             form.setFieldValue("has_shipped", false);
             form.setFieldValue("partially_shipped", true);
-
-            //updateMutation.mutate(newValues);
           }}
         />
       )}
-      {/* Completion Date Modal */}
+
       <Modal
         opened={completionModalOpen}
         onClose={() => setCompletionModalOpen(false)}
@@ -1178,7 +1232,6 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
         </Stack>
       </Modal>
 
-      {/* Add Installer Modal */}
       <AddInstaller
         opened={isAddInstallerOpen}
         onClose={() => {

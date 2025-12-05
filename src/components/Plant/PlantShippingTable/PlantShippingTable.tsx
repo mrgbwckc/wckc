@@ -51,6 +51,7 @@ import { Views } from "@/types/db";
 import { useDisclosure } from "@mantine/hooks";
 // IMPORTS for PDF
 import ShippingPdfPreviewModal from "./ShippingPdfPreviewModal";
+import JobDetailsDrawer from "@/components/Shared/JobDetailsDrawer/JobDetailsDrawer";
 
 type PlantTableView = Views<"plant_table_view">;
 
@@ -73,7 +74,14 @@ export default function PlantShippingTable() {
     null,
     null,
   ]);
+  const [drawerJobId, setDrawerJobId] = useState<number | null>(null);
+  const [drawerOpened, { open: openDrawer, close: closeDrawer }] =
+    useDisclosure(false);
 
+  const handleJobClick = (id: number) => {
+    setDrawerJobId(id);
+    openDrawer();
+  };
   // Modal State for PDF
   const [pdfOpened, { open: openPdf, close: closePdf }] = useDisclosure(false);
 
@@ -208,7 +216,11 @@ export default function PlantShippingTable() {
                     });
                   }
                 }}
-                style={{ cursor: "pointer" }}
+                styles={{
+                  input: {
+                    cursor: "pointer",
+                  },
+                }}
               />
             </Tooltip>
           </Center>
@@ -243,15 +255,21 @@ export default function PlantShippingTable() {
       header: "Job #",
       size: 100,
       cell: (info) => (
-        <Text fw={600} size="sm">
-          <Anchor
-            href={`/dashboard/installation/${info.row.original.job_id}`}
-            style={{ color: "#6100bbff", fontWeight: "bold" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {info.getValue()}
-          </Anchor>
-        </Text>
+        <Anchor
+          component="button"
+          size="sm"
+          fw={600}
+          w="100%"
+          style={{ textAlign: "left" }}
+          c="#6f00ffff"
+          onClick={(e) => {
+            e.stopPropagation();
+            const jobId = info.row.original.job_id;
+            if (jobId) handleJobClick(jobId);
+          }}
+        >
+          <Text fw={600}>{info.getValue()}</Text>
+        </Anchor>
       ),
     }),
     columnHelper.accessor("client_name", {
@@ -638,6 +656,11 @@ export default function PlantShippingTable() {
         onClose={closePdf}
         data={tableData}
         dateRange={dateRange}
+      />
+      <JobDetailsDrawer
+        jobId={drawerJobId}
+        opened={drawerOpened}
+        onClose={closeDrawer}
       />
     </Box>
   );
