@@ -25,7 +25,6 @@ import {
   Center,
   Badge,
   Divider,
-  Box,
   Title,
   Autocomplete,
   Modal,
@@ -54,11 +53,10 @@ import {
   TopDrawerFrontOptions,
 } from "@/dropdowns/dropdownOptions";
 
-// --- NEW TYPES FOR RELATIONAL DATA ---
 type DoorStyleOptionData = Pick<Tables<"door_styles">, "id" | "name">;
 type ReferenceOption = {
-  value: string; // ID as string for Select component
-  label: string; // Name for display
+  value: string;
+  label: string;
 };
 
 interface ExtendedMasterOrderInput extends MasterOrderInput {
@@ -66,7 +64,6 @@ interface ExtendedMasterOrderInput extends MasterOrderInput {
   manual_job_suffix?: string;
 }
 
-// State type for new door style
 interface NewDoorStyleState {
   name: string;
   model: string;
@@ -77,7 +74,6 @@ interface NewDoorStyleState {
 export default function NewSale() {
   const { supabase, isAuthenticated } = useSupabase();
   const { user } = useUser();
-  //const { data: jobBaseOptions, isLoading: jobsLoading } = useJobBaseNumbers(isAuthenticated);
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -94,10 +90,8 @@ export default function NewSale() {
   const [colorSearch, setColorSearch] = useState("");
   const [doorStyleSearch, setDoorStyleSearch] = useState("");
 
-  // Single value state for simple modals (Color, Species)
   const [newItemValue, setNewItemValue] = useState("");
 
-  // Object state for Door Style modal
   const [newDoorStyle, setNewDoorStyle] = useState<NewDoorStyleState>({
     name: "",
     model: "",
@@ -154,7 +148,6 @@ export default function NewSale() {
     });
   }, [clientsData]);
 
-  // --- FETCH REFERENCE DATA (now fetching IDs) ---
   const { data: colorsData, isLoading: colorsLoading } = useQuery<
     { Id: number; Name: string }[]
   >({
@@ -200,7 +193,6 @@ export default function NewSale() {
     enabled: isAuthenticated,
   });
 
-  // --- CREATE OPTIONS (useMemo) ---
   const colorOptions = useMemo<ReferenceOption[]>(() => {
     return (colorsData || []).map((c) => ({
       value: String(c.Id),
@@ -222,7 +214,6 @@ export default function NewSale() {
     }));
   }, [doorStylesData]);
 
-  // --- Mutations for Adding Color/Species/DoorStyle (Updated to set ID) ---
   const addSpeciesMutation = useMutation({
     mutationFn: async (name: string) => {
       const { data, error } = await supabase
@@ -324,7 +315,7 @@ export default function NewSale() {
       install: undefined as unknown as boolean,
       comments: "",
       order_type: undefined as unknown as string,
-      delivery_type: undefined as unknown as string,
+      delivery_type: "Delivery",
       manual_job_base: undefined as unknown as number,
       manual_job_suffix: "",
       is_memo: false,
@@ -393,9 +384,7 @@ export default function NewSale() {
         throw new Error("Job Base Number is required for Sold jobs.");
       }
 
-      // --- FIX: Construct Cabinet Payload with new FKs (Converting string IDs to Number/null) ---
       const cabinetPayload = {
-        // NEW FKs (Converting string IDs to Number/null)
         species_id: values.cabinet.species
           ? Number(values.cabinet.species)
           : null,
@@ -404,7 +393,6 @@ export default function NewSale() {
           ? Number(values.cabinet.door_style)
           : null,
 
-        // Existing fields
         box: values.cabinet.box,
         top_drawer_front: values.cabinet.top_drawer_front,
         interior: values.cabinet.interior,
@@ -414,7 +402,6 @@ export default function NewSale() {
         handles_selected: values.cabinet.handles_selected,
         glass: values.cabinet.glass,
 
-        // Conditional text fields
         glass_type: values.cabinet.glass ? values.cabinet.glass_type : "",
         piece_count: values.cabinet.doors_parts_only
           ? values.cabinet.piece_count
@@ -526,6 +513,27 @@ export default function NewSale() {
     });
   };
 
+  const getInputPropsWithDefault = (path: string, defaultValue: string) => {
+    const props = form.getInputProps(path);
+
+    return {
+      ...props,
+      placeholder: props.value ? undefined : `${defaultValue} (Default)`,
+      onBlur: (e: any) => {
+        props.onBlur?.(e);
+        const currentValue = props.value;
+        const isEmpty =
+          currentValue === "" ||
+          currentValue === null ||
+          currentValue === undefined;
+
+        if (isEmpty) {
+          form.setFieldValue(path, defaultValue);
+        }
+      },
+    };
+  };
+
   if (
     !isAuthenticated ||
     clientsLoading ||
@@ -591,7 +599,6 @@ export default function NewSale() {
         }}
       >
         <Stack gap={5}>
-          {/* 1. MASTER DETAILS (Client & Stage) */}
           <Paper withBorder p="md" radius="md" shadow="xl">
             <SimpleGrid cols={3}>
               <Group align="end">
@@ -810,7 +817,6 @@ export default function NewSale() {
             </SimpleGrid>
           </Paper>
 
-          {/* CONDITIONAL BILLING / SHIPPING */}
           {selectedClientData ? (
             <SimpleGrid
               cols={{ base: 1, lg: 2 }}
@@ -818,7 +824,6 @@ export default function NewSale() {
               bg={"gray.1"}
               p="10px"
             >
-              {/* BILLING */}
               <Fieldset legend="Billing Details" variant="filled" bg={"white"}>
                 <Stack gap="sm">
                   <Stack gap={0}>
@@ -881,7 +886,6 @@ export default function NewSale() {
                 </Stack>
               </Fieldset>
 
-              {/* SHIPPING */}
               <Fieldset legend="Shipping Details" variant="filled" bg={"white"}>
                 <Stack gap="sm">
                   <Group justify="space-between">
@@ -960,8 +964,6 @@ export default function NewSale() {
 
           <Paper withBorder p="md" bg={"gray.1"}>
             <SimpleGrid cols={{ base: 1, xl: 2 }} spacing={30}>
-              {/* LEFT COLUMN: Cabinet & Financials */}
-
               <Stack>
                 <Fieldset
                   legend="Basic Information"
@@ -992,7 +994,6 @@ export default function NewSale() {
                   variant="filled"
                   bg={"white"}
                 >
-                  {/* Row 1: Core Aesthetics */}
                   <SimpleGrid cols={3}>
                     <Select
                       label="Species"
@@ -1071,37 +1072,41 @@ export default function NewSale() {
                     />
                     <Autocomplete
                       label="Top Drawer Front"
-                      placeholder="Select or type Top Drawer Front"
                       data={TopDrawerFrontOptions}
-                      {...form.getInputProps(`cabinet.top_drawer_front`)}
+                      {...getInputPropsWithDefault(
+                        "cabinet.top_drawer_front",
+                        "Matching"
+                      )}
                     />
                     <Autocomplete
                       label="Interior Material"
-                      placeholder="Select Interior Material"
                       data={InteriorOptions}
-                      {...form.getInputProps(`cabinet.interior`)}
+                      {...getInputPropsWithDefault(
+                        "cabinet.interior",
+                        "White Mel"
+                      )}
                     />
                     <Autocomplete
                       label="Drawer Box"
-                      placeholder="Select Drawer Box"
                       data={DrawerBoxOptions}
-                      {...form.getInputProps(`cabinet.drawer_box`)}
+                      {...getInputPropsWithDefault("cabinet.drawer_box", "STD")}
                     />
                   </SimpleGrid>
 
-                  {/* Row 2: Box, Drawers, and Interior Details */}
                   <SimpleGrid cols={4} mt="md">
                     <Autocomplete
                       label="Box"
-                      data={[]} // Allow custom typing, no predefined list usually or add if you have one
+                      data={[]}
                       {...form.getInputProps(`cabinet.box`)}
                     />
 
                     <Autocomplete
                       label="Drawer Hardware"
-                      placeholder="Select Drawer Hardware"
                       data={DrawerHardwareOptions}
-                      {...form.getInputProps(`cabinet.drawer_hardware`)}
+                      {...getInputPropsWithDefault(
+                        "cabinet.drawer_hardware",
+                        "STD"
+                      )}
                     />
                     <Autocomplete
                       label="Flooring Type"
@@ -1119,9 +1124,7 @@ export default function NewSale() {
 
                   <Divider mt="md" />
 
-                  {/* Row 3: CONDITIONAL GROUPS (Glass & Parts Count) */}
                   <SimpleGrid cols={3} mt="md">
-                    {/* COLUMN 1: GLASS SPECIFICATIONS */}
                     <Stack gap={5}>
                       <Switch
                         label="Glass Doors Required"
@@ -1141,7 +1144,6 @@ export default function NewSale() {
                       />
                     </Stack>
 
-                    {/* COLUMN 2: PIECE COUNT SPECIFICATIONS */}
                     <Stack gap={5}>
                       <Switch
                         label="Doors/Parts Only Order"
@@ -1182,7 +1184,6 @@ export default function NewSale() {
                 </Fieldset>
               </Stack>
 
-              {/* RIGHT COLUMN: Details */}
               <Stack>
                 <Fieldset legend="Details" variant="filled" bg={"white"}>
                   <Textarea
@@ -1241,8 +1242,6 @@ export default function NewSale() {
               </Stack>
             </SimpleGrid>
           </Paper>
-
-          {/* SUBMIT BAR */}
         </Stack>
       </form>
       <AddClient
@@ -1349,7 +1348,6 @@ export default function NewSale() {
           </Center>
         ))}
 
-      {/* --- MODALS --- */}
       <Modal
         opened={speciesModalOpened}
         onClose={closeSpeciesModal}
