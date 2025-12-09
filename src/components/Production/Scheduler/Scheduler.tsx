@@ -243,6 +243,9 @@ export default function EditProductionSchedulePage({
     mutationFn: async (values: SchedulingFormValues) => {
       if (!user) throw new Error("User not authenticated");
       const prodId = (data?.production_schedule as any)?.prod_id;
+      if (values.ship_schedule) {
+        values.ship_status = "tentative";
+      }
       const { error } = await supabase
         .from("production_schedule")
         .update(values)
@@ -441,16 +444,19 @@ export default function EditProductionSchedulePage({
                       </Group>
                       <SimpleGrid cols={5} spacing="sm">
                         <DateInput
+                          clearable
                           highlightToday
                           label="Received Date"
                           {...form.getInputProps("received_date")}
                         />
                         <DateInput
+                          clearable
                           label="Placement Date"
                           {...form.getInputProps("placement_date")}
                           highlightToday
                         />
                         <DateInput
+                          clearable
                           label="Ship Date"
                           {...form.getInputProps("ship_schedule")}
                           highlightToday
@@ -570,6 +576,7 @@ export default function EditProductionSchedulePage({
                                 key as keyof SchedulingFormValues
                               )}
                               highlightToday
+                              clearable
                             />
                           ))}
                         </SimpleGrid>
