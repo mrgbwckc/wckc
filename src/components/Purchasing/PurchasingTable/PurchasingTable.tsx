@@ -50,9 +50,9 @@ import { notifications } from "@mantine/notifications";
 import { TablesInsert } from "@/types/db";
 import JobDetailsDrawer from "@/components/Shared/JobDetailsDrawer/JobDetailsDrawer";
 import { PurchasingTableView, PurchaseOrderItemState } from "./types";
-import { OrderPartsModal } from "./components/OrderPartsModal";
-import { IncompletePartsModal } from "./components/IncompletePartsModal";
-import { StatusCell } from "./components/StatusCell";
+import { OrderPartsModal } from "./subComponents/OrderPartsModal";
+import { IncompletePartsModal } from "./subComponents/IncompletePartsModal";
+import { StatusCell } from "./subComponents/StatusCell";
 
 export default function PurchasingTable() {
   const { supabase } = useSupabase();
