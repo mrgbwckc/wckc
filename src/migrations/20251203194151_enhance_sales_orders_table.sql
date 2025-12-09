@@ -1,2 +1,0 @@
-ALTER TABLE public.sales_orders
-ADD COLUMN is_memo BOOLEAN DEFAULT FALSE;

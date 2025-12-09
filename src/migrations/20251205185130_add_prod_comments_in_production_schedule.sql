@@ -1,1 +1,0 @@
-ALTER TABLE production_schedule ADD COLUMN production_comments TEXT;
