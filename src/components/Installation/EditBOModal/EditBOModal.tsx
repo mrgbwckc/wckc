@@ -21,7 +21,7 @@ import dayjs from "dayjs";
 import { notifications } from "@mantine/notifications";
 import { useSupabase } from "@/hooks/useSupabase";
 import { zodResolver } from "@/utils/zodResolver/zodResolver";
-import { BackorderFormValues, BackorderSchema } from "@/zod/backorders.schem";
+import { BackorderFormValues, BackorderSchema } from "@/zod/backorders.schema";
 import { Tables } from "@/types/db";
 import { FaBoxOpen, FaCheck, FaSave, FaTimes } from "react-icons/fa";
 
