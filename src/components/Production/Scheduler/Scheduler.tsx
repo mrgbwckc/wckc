@@ -65,11 +65,14 @@ type SalesOrderType = Tables<"sales_orders"> & {
   cabinet: CabinetSpecsJoined;
 };
 
-type SchedulingFormValues = TablesUpdate<"production_schedule">;
+type SchedulingFormValues = TablesUpdate<"production_schedule"> & {
+  wrap_date?: string | null;
+};
 
 type JobType = Tables<"jobs"> & {
   sales_orders: SalesOrderType;
   production_schedule: SchedulingFormValues;
+  installation: Tables<"installation">;
 };
 
 // ---------- Component ----------
@@ -94,6 +97,7 @@ export default function EditProductionSchedulePage({
           `
           *,
           production_schedule:production_schedule (*),
+          installation:installation (wrap_date),
           sales_orders:sales_orders (
             id,
             shipping_street,
@@ -161,6 +165,7 @@ export default function EditProductionSchedulePage({
       paint_in_schedule: null,
       paint_out_schedule: null,
       assembly_schedule: null,
+      wrap_date: null,
       ship_schedule: null,
       in_plant_actual: null,
       ship_status: "unprocessed",
@@ -183,7 +188,12 @@ export default function EditProductionSchedulePage({
   }, [isDirty, setIsDirty]);
 
   useEffect(() => {
-    if (data?.production_schedule) form.setValues(data.production_schedule);
+    if (data?.production_schedule) {
+      form.setValues({
+        ...data.production_schedule,
+        wrap_date: data.installation?.wrap_date || null,
+      });
+    }
   }, [data]);
 
   // ---------- Timeline / Progress Logic ----------
@@ -248,16 +258,37 @@ export default function EditProductionSchedulePage({
   // ---------- Mutation ----------
   const updateMutation = useMutation({
     mutationFn: async (values: SchedulingFormValues) => {
+      // 1. Validation Guards
       if (!user) throw new Error("User not authenticated");
-      const prodId = (data?.production_schedule as any)?.prod_id;
-      if (values.ship_schedule) {
-        values.ship_status = "tentative";
+      if (!data?.production_schedule?.prod_id)
+        throw new Error("Production schedule data missing");
+
+      const prodId = data.production_schedule.prod_id;
+      const { wrap_date, ...scheduleValues } = values;
+
+      if (scheduleValues.ship_schedule) {
+        scheduleValues.ship_status = "tentative";
       }
-      const { error } = await supabase
+
+      const { error: prodError } = await supabase
         .from("production_schedule")
-        .update(values)
+        .update(scheduleValues)
         .eq("prod_id", prodId);
-      if (error) throw error;
+
+      if (prodError) throw prodError;
+
+      if (wrap_date !== undefined && data.installation_id) {
+        const formattedWrapDate = wrap_date
+          ? dayjs(wrap_date).format("YYYY-MM-DD")
+          : wrap_date;
+
+        const { error: installError } = await supabase
+          .from("installation")
+          .update({ wrap_date: formattedWrapDate })
+          .eq("installation_id", data.installation_id);
+
+        if (installError) throw installError;
+      }
     },
     onSuccess: () => {
       notifications.show({
@@ -444,18 +475,48 @@ export default function EditProductionSchedulePage({
                       </Group>
                       <SimpleGrid cols={5} spacing="sm">
                         <DateInput
+                          styles={{
+                            label: {
+                              fontWeight: "bold",
+                            },
+                          }}
                           clearable
                           highlightToday
                           label="Received Date"
                           {...form.getInputProps("received_date")}
                         />
                         <DateInput
+                          styles={{
+                            label: {
+                              fontWeight: "bold",
+                            },
+                          }}
                           clearable
                           label="Placement Date"
                           {...form.getInputProps("placement_date")}
                           highlightToday
                         />
                         <DateInput
+                          styles={{
+                            label: {
+                              fontWeight: "bold",
+                            },
+                          }}
+                          clearable
+                          excludeDate={(date) =>
+                            new Date(date).getUTCDay() === 0 ||
+                            new Date(date).getUTCDay() === 6
+                          }
+                          label="Wrap Date"
+                          {...form.getInputProps("wrap_date")}
+                          highlightToday
+                        />
+                        <DateInput
+                          styles={{
+                            label: {
+                              fontWeight: "bold",
+                            },
+                          }}
                           clearable
                           excludeDate={(date) =>
                             new Date(date).getUTCDay() === 0 ||
@@ -465,10 +526,14 @@ export default function EditProductionSchedulePage({
                           {...form.getInputProps("ship_schedule")}
                           highlightToday
                         />
-
                         <Select
                           label="Shipping Date Status"
-                          w={"200px"}
+                          styles={{
+                            label: {
+                              fontWeight: "bold",
+                            },
+                          }}
+                          w={"180px"}
                           data={[
                             { value: "unprocessed", label: "Unprocessed" },
                             { value: "tentative", label: "Tentative" },
@@ -481,7 +546,6 @@ export default function EditProductionSchedulePage({
                             ) : null
                           }
                         />
-
                         <Box
                           style={{
                             display: "flex",
@@ -566,14 +630,16 @@ export default function EditProductionSchedulePage({
                         fields: [["assembly_schedule", "Assembly Schedule"]],
                         single: true,
                       },
-                    ].map(({ title, icon, fields, single }) => (
+                    ].map(({ title, fields, single }) => (
                       <Box key={title}>
-                        <Group mb={8}>
-                          {icon} <Text fw={600}>{title}</Text>
-                        </Group>
                         <SimpleGrid cols={single ? 1 : 2} spacing="sm">
                           {fields.map(([key, label]) => (
                             <DateInput
+                              styles={{
+                                label: {
+                                  fontWeight: "bold",
+                                },
+                              }}
                               excludeDate={(date) =>
                                 new Date(date).getUTCDay() === 0 ||
                                 new Date(date).getUTCDay() === 6

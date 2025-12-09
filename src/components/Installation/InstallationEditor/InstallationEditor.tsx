@@ -637,6 +637,11 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                       {/* ... (Installer Select, Install Date, Inspect Date) ... */}
                       <Group align="flex-end" gap="xs">
                         <Select
+                          styles={{
+                            label: {
+                              fontWeight: "bold",
+                            },
+                          }}
                           label="Assigned Installer"
                           placeholder="Select Installer"
                           data={installerOptions}
@@ -664,6 +669,11 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                         </Tooltip>
                       </Group>
                       <DateInput
+                        styles={{
+                          label: {
+                            fontWeight: "bold",
+                          },
+                        }}
                         label="Scheduled Installation Date"
                         placeholder="Start Date"
                         clearable
@@ -671,6 +681,11 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                         {...form.getInputProps("installation_date")}
                       />
                       <DateInput
+                        styles={{
+                          label: {
+                            fontWeight: "bold",
+                          },
+                        }}
                         label="Scheduled Inspection Date"
                         placeholder="Date"
                         clearable
@@ -691,10 +706,15 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
 
                     <Stack gap="lg">
                       {/* ROW 1: WRAP MANAGEMENT (2 Columns) */}
-                      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                      <SimpleGrid cols={{ base: 1, sm: 5 }} spacing="md">
                         <DateInput
+                          styles={{
+                            label: {
+                              fontWeight: "bold",
+                            },
+                          }}
                           label="Wrap Date"
-                          placeholder="Date Cabinets Wrapped"
+                          placeholder="Scheduled Wrap Date"
                           clearable
                           valueFormat="YYYY-MM-DD"
                           {...form.getInputProps("wrap_date")}
@@ -746,11 +766,12 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                             }}
                           />
                         </Box>
-                      </SimpleGrid>
-
-                      {/* ROW 2: SHIP MANAGEMENT (3 Columns) */}
-                      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
                         <DateInput
+                          styles={{
+                            label: {
+                              fontWeight: "bold",
+                            },
+                          }}
                           label="Scheduled Ship Date"
                           placeholder="Ship Date"
                           clearable
@@ -759,6 +780,11 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                         />
 
                         <Select
+                          styles={{
+                            label: {
+                              fontWeight: "bold",
+                            },
+                          }}
                           label="Shipping Date Status"
                           data={[
                             { value: "unprocessed", label: "Unprocessed" },
@@ -943,7 +969,7 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                   </TimelineItem>
 
                   <TimelineItem
-                    title="Final Inspection Completed"
+                    title="Inspection Date"
                     lineVariant="solid"
                     bullet={
                       <Box
@@ -977,29 +1003,13 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
                       },
                     }}
                   >
-                    <Text size="xs" c="dimmed">
-                      {form.values.inspection_completed
-                        ? "Signed Off:"
-                        : "Pending Sign-off"}
-                    </Text>
                     <Text size="xs" fw={500}>
-                      {form.values.inspection_completed
-                        ? dayjs(form.values.inspection_completed).format(
+                      {form.values.inspection_date
+                        ? dayjs(form.values.inspection_date).format(
                             "YYYY-MM-DD"
                           )
                         : "—"}
                     </Text>
-                    <Button
-                      size="xs"
-                      mt={2}
-                      variant="light"
-                      color={form.values.inspection_completed ? "red" : "green"}
-                      onClick={() =>
-                        handleCompletionToggle("inspection_completed")
-                      }
-                    >
-                      {form.values.inspection_completed ? "Reset" : "Complete"}
-                    </Button>
                   </TimelineItem>
                 </Timeline>
               </Paper>
@@ -1216,6 +1226,11 @@ export default function InstallationEditor({ jobId }: { jobId: number }) {
       >
         <Stack>
           <DateInput
+            styles={{
+              label: {
+                fontWeight: "bold",
+              },
+            }}
             label="Select Date"
             placeholder="Pick a date"
             value={completionDateInput}
