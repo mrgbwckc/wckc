@@ -56,6 +56,7 @@ import { Tables } from "@/types/db";
 import AddInstaller from "@/components/Installers/AddInstaller/AddInstaller";
 import OrderDetails from "@/components/Shared/OrderDetails/OrderDetails";
 import { useNavigationGuard } from "@/providers/NavigationGuardProvider";
+import HomeOwnersInfo from "../HomeOwnersInfo/HomeOwnersInfo";
 
 interface EditServiceOrderProps {
   serviceOrderId: string;
@@ -75,6 +76,7 @@ type ServiceOrderData = Tables<"service_orders"> & {
         sales_orders: Tables<"sales_orders"> & {
           cabinet: JoinedCabinet | null;
         };
+        homeowners_info: Tables<"homeowners_info">;
       })
     | null;
 };
@@ -135,6 +137,7 @@ export default function EditServiceOrder({
           ),
           jobs:job_id (
             job_number,
+            homeowners_info (*),
             sales_orders:sales_orders (
               designer,
               shipping_street,
@@ -198,6 +201,9 @@ export default function EditServiceOrder({
       warranty_order_cost: undefined,
       comments: "",
       parts: [],
+      homeowner_name: "",
+      homeowner_phone: "",
+      homeowner_email: "",
     },
     validate: zodResolver(ServiceOrderSchema),
   });
@@ -211,6 +217,8 @@ export default function EditServiceOrder({
 
   useEffect(() => {
     if (serviceOrderData) {
+      const hoInfo = serviceOrderData.jobs?.homeowners_info;
+
       form.setValues({
         job_id: String(serviceOrderData.job_id),
         service_order_number: serviceOrderData.service_order_number,
@@ -238,6 +246,9 @@ export default function EditServiceOrder({
           part: p.part,
           description: p.description || "",
         })),
+        homeowner_name: hoInfo?.homeowner_name || "",
+        homeowner_phone: hoInfo?.homeowner_phone || "",
+        homeowner_email: hoInfo?.homeowner_email || "",
       });
     }
   }, [serviceOrderData]);
@@ -270,6 +281,23 @@ export default function EditServiceOrder({
         .eq("service_order_id", serviceOrderId);
 
       if (soError) throw new Error(`Update Order Error: ${soError.message}`);
+
+      // Upsert Homeowner Info
+      if (
+        values.homeowner_name ||
+        values.homeowner_phone ||
+        values.homeowner_email
+      ) {
+        await supabase.from("homeowners_info").upsert(
+          {
+            job_id: Number(values.job_id),
+            homeowner_name: values.homeowner_name,
+            homeowner_phone: values.homeowner_phone,
+            homeowner_email: values.homeowner_email,
+          },
+          { onConflict: "job_id" }
+        );
+      }
 
       const { error: deleteError } = await supabase
         .from("service_order_parts")
@@ -451,99 +479,194 @@ export default function EditServiceOrder({
               </Fieldset>
 
               <Fieldset legend="Logistics" variant="filled" bg="white">
-                <SimpleGrid cols={{ base: 1, sm: 3 }}>
-                  <Group align="flex-end" gap="xs" style={{ width: "100%" }}>
-                    <Select
-                      label="Assign Service Tech"
-                      placeholder={
-                        form.values.installer_requested
-                          ? "Installer Requested"
-                          : "Select Service Tech"
-                      }
-                      data={installerOptions}
-                      searchable
-                      clearable
-                      disabled={form.values.installer_requested}
-                      style={{ flex: 1 }}
-                      {...form.getInputProps("installer_id")}
-                    />
-                    <Tooltip label="Create New Installer">
-                      <ActionIcon
-                        variant="filled"
-                        color="#4A00E0"
-                        size="lg"
-                        mb={2}
-                        onClick={openAddInstaller}
-                      >
-                        <FaPlus size={12} />
-                      </ActionIcon>
-                    </Tooltip>
-                    <Tooltip
-                      label={
-                        form.values.installer_requested
-                          ? "Installer Requested"
-                          : "Request Installer"
-                      }
-                    >
-                      <ActionIcon
-                        variant="filled"
-                        color={
-                          form.values.installer_requested ? "#00722cff" : "gray"
-                        }
-                        size="lg"
-                        mb={2}
-                        onClick={() =>
-                          form.setFieldValue(
-                            "installer_requested",
-                            !form.values.installer_requested
-                          )
-                        }
-                      >
-                        {form.values.installer_requested ? (
-                          <FaCheck size={12} />
-                        ) : (
-                          <FaTools size={12} />
-                        )}
-                      </ActionIcon>
-                    </Tooltip>
+                {/* ... inside your existing form ... */}
+
+                {/* Use a Box to contain the responsive layout */}
+                <Box mt="md">
+                  {/* 1. Desktop View (Visible from 'lg' breakpoint up) 
+      Using Group with align="stretch" allows vertical dividers to work.
+  */}
+                  <Group
+                    visibleFrom="lg"
+                    align="stretch"
+                    wrap="nowrap"
+                    gap="lg"
+                  >
+                    {/* COLUMN 1: INSTALLER & DATES */}
+                    <Stack gap="sm" style={{ flex: 1 }}>
+                      <Group align="flex-end" gap="xs" wrap="nowrap">
+                        <Select
+                          label="Assign Service Tech"
+                          placeholder={
+                            form.values.installer_requested
+                              ? "Installer Requested"
+                              : "Select Service Tech"
+                          }
+                          data={installerOptions}
+                          searchable
+                          clearable
+                          disabled={form.values.installer_requested}
+                          style={{ flex: 1 }}
+                          {...form.getInputProps("installer_id")}
+                        />
+                        <Tooltip label="Create New Installer">
+                          <ActionIcon
+                            variant="filled"
+                            color="#4A00E0"
+                            size="lg"
+                            mb={1}
+                            onClick={openAddInstaller}
+                          >
+                            <FaPlus size={12} />
+                          </ActionIcon>
+                        </Tooltip>
+                        <Tooltip
+                          label={
+                            form.values.installer_requested
+                              ? "Installer Requested"
+                              : "Request Installer"
+                          }
+                        >
+                          <ActionIcon
+                            variant="filled"
+                            color={
+                              form.values.installer_requested
+                                ? "#00722cff"
+                                : "gray"
+                            }
+                            size="lg"
+                            mb={1}
+                            onClick={() =>
+                              form.setFieldValue(
+                                "installer_requested",
+                                !form.values.installer_requested
+                              )
+                            }
+                          >
+                            {form.values.installer_requested ? (
+                              <FaCheck size={12} />
+                            ) : (
+                              <FaTools size={12} />
+                            )}
+                          </ActionIcon>
+                        </Tooltip>
+                      </Group>
+
+                      <SimpleGrid cols={2} spacing="xs">
+                        <DateInput
+                          label="Due Date"
+                          placeholder="YYYY-MM-DD"
+                          clearable
+                          valueFormat="YYYY-MM-DD"
+                          {...form.getInputProps("due_date")}
+                        />
+                        <NumberInput
+                          label="Est. Hours"
+                          min={0}
+                          {...form.getInputProps("hours_estimated")}
+                        />
+                      </SimpleGrid>
+                    </Stack>
+
+                    {/* DIVIDER 1 */}
+                    <Divider orientation="vertical" />
+
+                    {/* COLUMN 2: SERVICE DETAILS */}
+                    <Group align="stretch" gap="xs" style={{ flex: 1 }}>
+                      <Stack gap={4} style={{ flex: 1 }}>
+                        <TextInput
+                          label="Service Type"
+                          placeholder="Type..."
+                          {...form.getInputProps("service_type")}
+                        />
+                        <TextInput
+                          placeholder="Detail..."
+                          {...form.getInputProps("service_type_detail")}
+                        />
+                      </Stack>
+
+                      {/* Inner Divider */}
+                      <Divider orientation="vertical" />
+
+                      <Stack gap={4} style={{ flex: 1 }}>
+                        <TextInput
+                          label="Service By"
+                          placeholder="By..."
+                          {...form.getInputProps("service_by")}
+                        />
+                        <TextInput
+                          placeholder="Detail..."
+                          {...form.getInputProps("service_by_detail")}
+                        />
+                      </Stack>
+                    </Group>
+
+                    {/* DIVIDER 2 */}
+                    <Divider orientation="vertical" />
+
+                    {/* COLUMN 3: HOMEOWNER INFO */}
+                    <Box style={{ flex: 1 }}>
+                      <HomeOwnersInfo form={form} />
+                    </Box>
                   </Group>
-                  <DateInput
-                    label="Due Date"
-                    placeholder="YYYY-MM-DD"
-                    clearable
-                    valueFormat="YYYY-MM-DD"
-                    {...form.getInputProps("due_date")}
-                  />
-                  <NumberInput
-                    label="Estimated Hours"
-                    min={0}
-                    {...form.getInputProps("hours_estimated")}
-                  />
-                </SimpleGrid>
-                <SimpleGrid cols={2} mt="md">
-                  <Stack gap={5}>
-                    <TextInput
-                      label="Service Type"
-                      placeholder="e.g. Warranty, Deficiency"
-                      {...form.getInputProps("service_type")}
-                    />
-                    <TextInput
-                      placeholder="Detail..."
-                      {...form.getInputProps("service_type_detail")}
-                    />
+
+                  {/* 2. Mobile/Tablet View (Hidden from 'lg' up) 
+      Stacks items vertically, hides dividers.
+  */}
+                  <Stack hiddenFrom="lg" gap="xl">
+                    {/* Mobile Col 1 */}
+                    <Stack gap="sm">
+                      {/* ... (Repeat inputs or extract to a sub-component to avoid code duplication) ... */}
+                      {/* For brevity, use the same input logic here as above if not extracting components */}
+                      <Group align="flex-end" gap="xs" wrap="nowrap">
+                        <Select
+                          label="Assign Service Tech"
+                          data={installerOptions}
+                          {...form.getInputProps("installer_id")}
+                          style={{ flex: 1 }}
+                        />
+                        {/* ... Actions ... */}
+                      </Group>
+                      <SimpleGrid cols={2}>
+                        <DateInput
+                          label="Due Date"
+                          {...form.getInputProps("due_date")}
+                        />
+                        <NumberInput
+                          label="Est. Hours"
+                          {...form.getInputProps("hours_estimated")}
+                        />
+                      </SimpleGrid>
+                    </Stack>
+
+                    {/* Mobile Col 2 */}
+                    <SimpleGrid cols={2}>
+                      <Stack gap={4}>
+                        <TextInput
+                          label="Service Type"
+                          {...form.getInputProps("service_type")}
+                        />
+                        <TextInput
+                          placeholder="Detail..."
+                          {...form.getInputProps("service_type_detail")}
+                        />
+                      </Stack>
+                      <Stack gap={4}>
+                        <TextInput
+                          label="Service By"
+                          {...form.getInputProps("service_by")}
+                        />
+                        <TextInput
+                          placeholder="Detail..."
+                          {...form.getInputProps("service_by_detail")}
+                        />
+                      </Stack>
+                    </SimpleGrid>
+
+                    {/* Mobile Col 3 */}
+                    <HomeOwnersInfo form={form} />
                   </Stack>
-                  <Stack gap={5}>
-                    <TextInput
-                      label="Service By"
-                      placeholder="e.g. Internal, Contractor"
-                      {...form.getInputProps("service_by")}
-                    />
-                    <TextInput
-                      placeholder="Detail..."
-                      {...form.getInputProps("service_by_detail")}
-                    />
-                  </Stack>
-                </SimpleGrid>
+                </Box>
 
                 <Box mt="md">
                   <CustomRichTextEditor

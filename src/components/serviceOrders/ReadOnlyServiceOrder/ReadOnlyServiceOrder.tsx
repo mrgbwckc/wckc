@@ -137,6 +137,7 @@ export default function ReadOnlyServiceOrder({
           ),
           jobs:job_id (
             job_number,
+            homeowners_info (*),
             sales_orders:sales_orders (
               shipping_street,
               shipping_city,
@@ -208,17 +209,9 @@ export default function ReadOnlyServiceOrder({
       }
     : null;
   const installer = so.installers;
+  const hoInfo = job?.homeowners_info?.[0]; // Access nested homeowner data
   const isCompleted = !!so.completed_at;
   const statusColor = isCompleted ? "green" : "violet";
-
-  const formatAddress = (
-    street?: string | null,
-    city?: string | null,
-    prov?: string | null,
-    zip?: string | null
-  ) => {
-    return [street, city, prov, zip].filter(Boolean).join(", ");
-  };
 
   return (
     <Container
@@ -351,6 +344,26 @@ export default function ReadOnlyServiceOrder({
                       />
                     )}
                   </Stack>
+                </Card>
+
+                {/* Homeowner Information Card */}
+                <Card shadow="sm" padding="lg" radius="md" withBorder>
+                  <SectionTitle
+                    icon={FaUser}
+                    title="Homeowner Info"
+                    color="blue"
+                  />
+                  {hoInfo ? (
+                    <Stack gap="xs">
+                      <InfoRow label="Name" value={hoInfo.homeowner_name} />
+                      <InfoRow label="Phone" value={hoInfo.homeowner_phone} />
+                      <InfoRow label="Email" value={hoInfo.homeowner_email} />
+                    </Stack>
+                  ) : (
+                    <Text size="sm" c="dimmed" fs="italic">
+                      No homeowner information available.
+                    </Text>
+                  )}
                 </Card>
               </Stack>
             </Grid.Col>
