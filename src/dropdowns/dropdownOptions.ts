@@ -1,46 +1,80 @@
-export const OrderTypeOptions = ["Multi Fam", "Single Fam", "Reno"];
+export const OrderTypeOptions = [
+  "Single Fam",
+  "Multi Fam",
+  "Reno",
+  "New Const",
+  "Supply",
+  "Project",
+  "Pickup",
+];
 
-export const TopDrawerFrontOptions = ["5 pc", "Matching", "Slab"];
+export const TopDrawerFrontOptions = ["Matching", "Slab", "N/A"];
 export const InteriorOptions = [
-  "Almond",
-  "Birch",
-  "Grey",
-  "Maple Ply",
+  "WHITE MEL",
+  "PHOTO MPL",
+  "GREY",
+  "FIN INT",
+  "BIRCH",
   "N/A",
-  "Photo Mpl",
-  "White Mel",
-  "White Ply",
-  "Fin Int",
+  "WHITE PLY",
+  "MAPLE PLY",
+  "ALMOND",
 ];
 export const DrawerBoxOptions = [
-  "Std",
-  "Dbl Wall",
-  "Metal Box",
-  "Mpl Dove",
-  "Birch F/J",
+  "STD",
+  "METAL BOX",
+  "MPL DOVE",
+  "N/A",
+  "DBL WALL",
+  "BIRCH F/J",
 ];
 export const DrawerHardwareOptions = [
-  "Std",
-  "Dbl Wall",
-  "Metal Box",
   "SC Under",
+  "Metal Box",
+  "Std",
+  "Soft Close",
+  "Dbl Wall",
   "F/X Side",
 ];
 export const DeliveryTypeOptions = ["Pickup", "Delivery"];
 export const flooringTypeOptions = [
-  "LVP",
+  "Other",
   "Hardwood",
   "Laminate",
-  "Lino",
+  "Vinyl",
+  "LVP",
+  "Ready",
   "Tile",
-  "Other",
+  "VinylPlank",
+  "Lino",
 ];
 export const flooringClearanceOptions = [
-  `3/8"`,
-  `1/2"`,
-  `5/8"`,
-  `3/4"`,
-  `7/8"`,
-  `1"`,
-  "TBD",
+  `TBD`,
+  `7/8'`,
+  `5/8'`,
+  `N/A`,
+  `1/2'`,
+  `Ready`,
+  `3/16'`,
+  `1'`,
+  `1/4'`,
+  `6mm`,
+  `see drw`,
+  `3/4'`,
+  `See drwgs`,
+  `6.5mm`,
+  `3/16`,
+  `5/16'`,
+  `2mm`,
+  `8mm`,
+  `3/8'`,
+  `5mm`,
+];
+
+export const glassTypeOptions = [
+  "CLEAR",
+  "PLAIN",
+  "CLEAR GLASS",
+  "ACID ETCH",
+  "WATER GLASS",
 ];

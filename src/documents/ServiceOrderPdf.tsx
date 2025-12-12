@@ -14,7 +14,6 @@ const styles = StyleSheet.create({
     lineHeight: 1.3,
   },
 
-  // Header Section
   headerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -71,7 +70,7 @@ const styles = StyleSheet.create({
     fontWeight: "normal",
   },
 
-  // Comments Section
+  // Comments Section Container
   commentsSection: {
     marginTop: 10,
     borderBottomWidth: 4,
@@ -108,34 +107,44 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   colQty: { width: "10%" },
-  colPart: { width: "90%" },
+  colPart: { width: "30%" },
+  colDescription: { width: "60%" },
 });
 
+// Styles specifically for the HTML content inside the PDF
 const htmlStyles = {
+  // Global text settings for HTML content
   body: {
     fontFamily: "Helvetica",
-
+    fontSize: 10,
     lineHeight: 1.4,
   },
-  p: {
-    margin: 0,
-    marginBottom: 2,
-    fontSize: 10,
-  },
-  ul: {
-    marginLeft: 10,
-    marginBottom: 2,
-    fontSize: 10,
-  },
-  li: {
-    marginLeft: 0,
-    fontSize: 10,
-  },
+  // Paragraph spacing
+  p: { fontSize: 10, margin: 0, marginBottom: 4 },
+  // Lists
+  ul: { fontSize: 10, marginLeft: 15, marginBottom: 4 },
+  li: { fontSize: 10, marginLeft: 0, marginBottom: 2 },
+  // Bold Text (using standard Helvetica-Bold)
   strong: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
     fontWeight: "bold" as const,
   },
   b: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
     fontWeight: "bold" as const,
+  },
+  // Italic Text
+  em: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Oblique",
+    fontStyle: "italic" as const,
+  },
+  i: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Oblique",
+    fontStyle: "italic" as const,
   },
 };
 
@@ -144,15 +153,31 @@ interface PdfProps {
 }
 
 export const ServiceOrderPdf = ({ data }: PdfProps) => {
-  console.log(data);
   const job = data.jobs || {};
   const so = job.sales_orders || {};
   const cab = so.cabinet || {};
   const installer = data.installers || {};
+  const homeowner = job.homeowners_info || {};
 
   const address = [so.shipping_street, so.shipping_city]
     .filter(Boolean)
     .join(", ");
+
+  // HELPER: Handles legacy plain text from DB by converting newlines to <br/>
+  // This ensures old comments render with line breaks even if they aren't HTML.
+  const processContent = (content: string | null) => {
+    if (!content) return "<p>No comments provided.</p>";
+
+    // Check for HTML tags
+    const isHtml = /<[a-z][\s\S]*>/i.test(content);
+
+    if (isHtml) {
+      return content;
+    }
+
+    // Convert plain text newlines to HTML breaks for PDF rendering
+    return content.replace(/\n/g, "<br />");
+  };
 
   return (
     <Document>
@@ -180,72 +205,48 @@ export const ServiceOrderPdf = ({ data }: PdfProps) => {
 
         {/* --- MAIN INFO GRID --- */}
         <View style={styles.infoContainer}>
-          {/* LEFT COLUMN: All Specs Stacked Vertically */}
+          {/* LEFT COLUMN */}
           <View style={styles.leftCol}>
-            {/* Job/Client Info */}
             <View style={styles.row}>
               <Text style={styles.label}>Job Number:</Text>
-              <Text style={{ ...styles.value }}>{job.job_number || "—"}</Text>
+              <Text style={styles.value}>{job.job_number || "—"}</Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Customer:</Text>
-              <Text style={{ ...styles.value }}>{so.shipping_client_name}</Text>
+              <Text style={styles.value}>{so.shipping_client_name}</Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Address:</Text>
-              <Text style={{ ...styles.value }}>{address || "—"}</Text>
+              <Text style={styles.value}>{address || "—"}</Text>
             </View>
 
             <View style={{ height: 10 }} />
 
-            {/* Cabinet Specs - Fully Stacked */}
             <View style={styles.row}>
               <Text style={styles.label}>Species:</Text>
-              <Text style={{ ...styles.value }}>
-                {cab.species.Species || "—"}
-              </Text>
+              <Text style={styles.value}>{cab.species?.Species || "—"}</Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Color:</Text>
-              <Text
-                style={{
-                  ...styles.value,
-                  textTransform: "uppercase",
-                }}
-              >
-                {cab.colors.Name || "—"}
+              <Text style={{ ...styles.value, textTransform: "uppercase" }}>
+                {cab.colors?.Name || "—"}
               </Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Door Style:</Text>
-              <Text
-                style={{
-                  ...styles.value,
-                  textTransform: "uppercase",
-                }}
-              >
-                {cab.door_styles.name || "—"}
+              <Text style={{ ...styles.value, textTransform: "uppercase" }}>
+                {cab.door_styles?.name || "—"}
               </Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Top Drawer Front:</Text>
-              <Text
-                style={{
-                  ...styles.value,
-                  textTransform: "uppercase",
-                }}
-              >
+              <Text style={{ ...styles.value, textTransform: "uppercase" }}>
                 {cab.top_drawer_front || "—"}
               </Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Interior:</Text>
-              <Text
-                style={{
-                  ...styles.value,
-                  textTransform: "uppercase",
-                }}
-              >
+              <Text style={{ ...styles.value, textTransform: "uppercase" }}>
                 {cab.interior || "—"}
               </Text>
             </View>
@@ -257,29 +258,19 @@ export const ServiceOrderPdf = ({ data }: PdfProps) => {
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Drawer Box:</Text>
-              <Text
-                style={{
-                  ...styles.value,
-                  textTransform: "uppercase",
-                }}
-              >
+              <Text style={{ ...styles.value, textTransform: "uppercase" }}>
                 {cab.drawer_box || "—"}
               </Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Drawer Hardware:</Text>
-              <Text
-                style={{
-                  ...styles.value,
-                  textTransform: "uppercase",
-                }}
-              >
+              <Text style={{ ...styles.value, textTransform: "uppercase" }}>
                 {cab.drawer_hardware || "—"}
               </Text>
             </View>
           </View>
 
-          {/* RIGHT COLUMN: Installer/Designer */}
+          {/* RIGHT COLUMN */}
           <View style={styles.rightCol}>
             <View style={{ marginBottom: 15 }}>
               <Text
@@ -305,13 +296,39 @@ export const ServiceOrderPdf = ({ data }: PdfProps) => {
               </Text>
               <Text style={{ fontSize: 10 }}>{so.designer || "—"}</Text>
             </View>
+            {(homeowner?.homeowner_name ||
+              homeowner?.homeowner_phone ||
+              homeowner?.homeowner_email) && (
+              <View style={{ marginBottom: 15, flexDirection: "column" }}>
+                <Text
+                  style={{ fontSize: 10, fontWeight: "bold", marginRight: 5 }}
+                >
+                  Homeowner Info
+                </Text>
+
+                <Text style={{ fontSize: 10 }}>
+                  {homeowner.homeowner_name || "—"}
+                </Text>
+
+                <Text style={{ fontSize: 10 }}>
+                  {homeowner.homeowner_phone || "—"}
+                </Text>
+
+                <Text style={{ fontSize: 10 }}>
+                  {homeowner.homeowner_email || "—"}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
-        {/* --- COMMENTS SECTION (HTML RENDERER) --- */}
+        {/* --- COMMENTS SECTION --- */}
         <View style={styles.commentsSection}>
           <Text style={styles.commentsHeader}>Comments</Text>
-          <Html stylesheet={htmlStyles}>{data.comments || ""}</Html>
+          {/* IMPORTANT: stylesheet prop passes the CSS rules, processContent handles legacy text */}
+          <Html stylesheet={htmlStyles} style={{ fontSize: 10 }}>
+            {processContent(data.comments)}
+          </Html>
         </View>
 
         {/* --- PARTS TABLE --- */}
@@ -323,6 +340,9 @@ export const ServiceOrderPdf = ({ data }: PdfProps) => {
             <View style={styles.colPart}>
               <Text style={styles.tableHeaderLabel}>Part</Text>
             </View>
+            <View style={styles.colPart}>
+              <Text style={styles.tableHeaderLabel}>Description</Text>
+            </View>
           </View>
 
           {data.service_order_parts && data.service_order_parts.length > 0 ? (
@@ -333,8 +353,12 @@ export const ServiceOrderPdf = ({ data }: PdfProps) => {
                 </View>
                 <View style={styles.colPart}>
                   <Text style={{ fontSize: 10, textTransform: "uppercase" }}>
-                    {part.part}{" "}
-                    {part.description ? `(${part.description})` : ""}
+                    {part.part}
+                  </Text>
+                </View>
+                <View style={styles.colDescription}>
+                  <Text style={{ fontSize: 10, textTransform: "uppercase" }}>
+                    {part.description}
                   </Text>
                 </View>
               </View>

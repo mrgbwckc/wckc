@@ -4,10 +4,8 @@ import StarterKit from "@tiptap/starter-kit";
 import { Box, Text } from "@mantine/core";
 import { useEffect } from "react";
 import TextAlign from "@tiptap/extension-text-align";
-import Document from "@tiptap/extension-document";
-import { BulletList, ListItem } from "@tiptap/extension-list";
-import Paragraph from "@tiptap/extension-paragraph";
-
+import { Underline } from "@tiptap/extension-underline";
+import { Highlight } from "@tiptap/extension-highlight";
 interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
@@ -20,29 +18,41 @@ export default function CustomRichTextEditor({
   onChange,
   label,
 }: RichTextEditorProps) {
+  const parseContent = (val: string) => {
+    if (!val) return "";
+
+    const isHtml = /<[a-z][\s\S]*>/i.test(val);
+    if (isHtml) return val;
+    return val
+      .split("\n")
+      .map((line) => `<p>${line}</p>`)
+      .join("");
+  };
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ link: false }),
       Link,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
-      BulletList,
-      ListItem,
-      Document,
-      Paragraph,
+      Underline,
+      Highlight,
     ],
-    content,
+    content: parseContent(content),
     immediatelyRender: false,
     onUpdate({ editor }) {
       onChange(editor.getHTML());
     },
   });
+
   useEffect(() => {
-    if (editor && content && editor.getHTML() !== content) {
-      editor.commands.setContent(content, {
+    const parsed = parseContent(content);
+    if (editor && parsed && editor.getHTML() !== parsed) {
+      editor.commands.setContent(parsed, {
         emitUpdate: false,
       });
     }
   }, [editor, content]);
+
   return (
     <Box>
       {label && (

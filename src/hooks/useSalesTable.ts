@@ -1,4 +1,3 @@
-// src/hooks/useSalesOrdersServer.ts
 import { useQuery } from "@tanstack/react-query";
 import { useSupabase } from "@/hooks/useSupabase";
 import {

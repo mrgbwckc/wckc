@@ -415,14 +415,25 @@ export default function EditServiceOrder({
               p="md"
               style={{ borderRadius: "6px" }}
             >
-              <Text
-                fw={600}
-                size="lg"
-                style={{ display: "flex", alignItems: "center" }}
-              >
-                <FaTools size={20} style={{ marginRight: 8 }} color="#4A00E0" />
-                Service Order: {serviceOrderData?.service_order_number || "—"}
-              </Text>
+              <Stack>
+                <Text
+                  fw={600}
+                  size="lg"
+                  style={{ display: "flex", alignItems: "center" }}
+                >
+                  <FaTools
+                    size={20}
+                    style={{ marginRight: 8 }}
+                    color="#4A00E0"
+                  />
+                  Service Order: {serviceOrderData?.service_order_number || "—"}
+                </Text>
+                <Text size="xs" c="dimmed">
+                  Entered:{" "}
+                  {dayjs(serviceOrderData?.date_entered).format("YYYY-MM-DD") ||
+                    "—"}
+                </Text>
+              </Stack>
 
               <Group>
                 {serviceOrderData && (

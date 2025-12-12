@@ -1,4 +1,5 @@
 "use client";
+import "./globals.css";
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import "@mantine/core/styles/baseline.css";
@@ -8,7 +9,7 @@ import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "@mantine/tiptap/styles.css";
 import "@mantine/dropzone/styles.css";
-import "./globals.css";
+
 import { MantineProvider, mantineHtmlProps } from "@mantine/core";
 
 import { ClerkProvider } from "@clerk/nextjs";
@@ -20,7 +21,6 @@ import SupabaseProvider from "@/providers/SupabaseProvider";
 import Sidebar, { SidebarLink } from "@/components/Sidebar/Sidebar";
 import { usePathname } from "next/navigation";
 import NavigationGuardProvider from "@/providers/NavigationGuardProvider";
-import TopNavigationBar from "@/components/Shared/TopNavigationBar/TopNavigationBar";
 
 const Quicksand = localFont({
   src: "../../public/Fonts/Quicksand/Quicksand-Regular.ttf",
