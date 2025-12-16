@@ -49,6 +49,9 @@ export function useInstallationTable({
           case "ship_schedule":
             query = query.eq("ship_schedule", valStr);
             break;
+          case "has_shipped":
+            query = query.eq("has_shipped", valStr === "false");
+            break;
           default:
             break;
         }
@@ -65,7 +68,7 @@ export function useInstallationTable({
 
         query = query.order(dbColumn, { ascending: !desc });
       } else {
-        query = query.order("job_number", { ascending: false });
+        query = query.order("ship_schedule", { ascending: false });
       }
 
       const from = pagination.pageIndex * pagination.pageSize;

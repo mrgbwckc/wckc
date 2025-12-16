@@ -107,7 +107,6 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
     { open: openDoorStyleModal, close: closeDoorStyleModal },
   ] = useDisclosure(false);
 
-
   const form = useForm<ExtendedMasterOrderInput>({
     initialValues: {
       client_id: 0,
@@ -155,7 +154,6 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
     validate: zodResolver(MasterOrderSchema),
   });
 
-
   const {
     options: clientOptions,
     isLoading: clientsLoading,
@@ -180,7 +178,6 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
     setSearch: setDoorStyleSearch,
     search: doorStyleSearch,
   } = useDoorStyleSearch(form.values.cabinet.door_style || null);
-
 
   const addSpeciesMutation = useMutation({
     mutationFn: async (name: string) => {
@@ -274,7 +271,6 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
       }),
   });
 
-
   const { data: salesOrderData, isLoading: salesOrderLoading } = useQuery({
     queryKey: ["sales-order", salesOrderId],
     queryFn: async () => {
@@ -320,7 +316,7 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
         total: salesOrderData.total,
         deposit: salesOrderData.deposit,
         install: salesOrderData.install,
-        comments: salesOrderData.comments,
+        comments: salesOrderData.comments || "",
         order_type: salesOrderData.order_type,
         delivery_type: salesOrderData.delivery_type,
         manual_job_base: salesOrderData.job?.job_base_number,

@@ -31,6 +31,7 @@ import {
   Title,
   Button,
   Anchor,
+  Switch,
 } from "@mantine/core";
 import {
   FaSearch,
@@ -419,6 +420,35 @@ export default function InstallationTable() {
                 }}
                 valueFormat="YYYY-MM-DD"
               />
+              <Switch
+                label="Not Shipped"
+                size="md"
+                thumbIcon={<FaCheckCircle />}
+                styles={{
+                  track: {
+                    cursor: "pointer",
+                    background:
+                      getInputFilterValue("has_shipped") === "true"
+                        ? "linear-gradient(135deg, #6c63ff 0%, #4a00e0 100%)"
+                        : "linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%)",
+                    color: "white",
+                    border: "none",
+                  },
+                  thumb: {
+                    background:
+                      getInputFilterValue("has_shipped") === "true"
+                        ? "#6e54ffff"
+                        : "#d1d1d1ff",
+                  },
+                }}
+                checked={getInputFilterValue("has_shipped") === "true"}
+                onChange={(e) =>
+                  setInputFilterValue(
+                    "has_shipped",
+                    e.target.checked ? "true" : undefined
+                  )
+                }
+              />
             </SimpleGrid>
 
             <Group justify="flex-end" mt="md">
@@ -508,7 +538,11 @@ export default function InstallationTable() {
             ) : (
               table.getRowModel().rows.map((row) => {
                 const bgColor =
-                  row.original.wrap_date === null ? "#ffefefff" : undefined;
+                  row.original.wrap_date !== null ||
+                  row.original.ship_schedule !== null ||
+                  row.original.has_shipped == true
+                    ? undefined
+                    : "#ffefefff";
                 return (
                   <Table.Tr
                     key={row.id}
