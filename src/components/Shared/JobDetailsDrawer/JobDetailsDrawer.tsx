@@ -281,6 +281,9 @@ export default function JobDetailsDrawer({
                 <Text size="xs" mt="xs">
                   Designer: {so?.designer}
                 </Text>
+                <Text size="xs" mt="xs">
+                  Created On: {dayjs(so?.created_at).format("MMM D, YYYY")}
+                </Text>
               </Stack>
             </Group>
 

@@ -79,7 +79,7 @@ export function useInstallationTable({
 
         query = query.order(dbColumn, { ascending: !desc });
       } else {
-        query = query.order("ship_schedule", { ascending: false });
+        query = query.order("job_number", { ascending: false });
       }
 
       const from = pagination.pageIndex * pagination.pageSize;
