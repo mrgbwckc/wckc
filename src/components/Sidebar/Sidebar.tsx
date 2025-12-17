@@ -27,7 +27,7 @@ import {
   FaBoxOpen,
 } from "react-icons/fa";
 import { FaGears } from "react-icons/fa6";
-import { MdFactory, MdSupervisorAccount } from "react-icons/md";
+import { MdFactory, MdFeedback, MdSupervisorAccount } from "react-icons/md";
 import { GoTools } from "react-icons/go";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { GrSchedules } from "react-icons/gr";
@@ -63,6 +63,7 @@ const iconMap: Record<string, any> = {
   MdSupervisorAccount,
   GrSchedules,
   FaBoxOpen,
+  MdFeedback,
 };
 
 function MainLink({ item }: { item: SidebarLink }) {

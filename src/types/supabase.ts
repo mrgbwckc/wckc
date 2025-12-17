@@ -1334,6 +1334,75 @@ export type Database = {
       }
     }
     Views: {
+      backorders_view: {
+        Row: {
+          comments: string | null
+          complete: boolean | null
+          created_at: string | null
+          date_entered: string | null
+          due_date: string | null
+          id: number | null
+          job_id: number | null
+          job_number: string | null
+          shipping_city: string | null
+          shipping_client_name: string | null
+          shipping_province: string | null
+          shipping_street: string | null
+          shipping_zip: string | null
+          site_address: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backorders_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_table_view"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "backorders_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "installation_table_view"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "backorders_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "backorders_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "plant_table_view"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "backorders_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "prod_table_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "backorders_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "sales_table_view"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "backorders_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders_table_view"
+            referencedColumns: ["job_id"]
+          },
+        ]
+      }
       debug_auth: {
         Row: {
           full_token_payload: Json | null

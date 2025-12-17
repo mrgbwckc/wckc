@@ -322,7 +322,9 @@ export default function EditServiceOrder({
         message: "Service Order updated successfully.",
         color: "green",
       });
-      queryClient.invalidateQueries({ queryKey: ["service_orders_list"] });
+      queryClient.invalidateQueries({
+        queryKey: ["service_orders_table_view"],
+      });
       queryClient.invalidateQueries({
         queryKey: ["service_order", serviceOrderId],
       });

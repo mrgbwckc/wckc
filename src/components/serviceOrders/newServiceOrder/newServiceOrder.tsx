@@ -330,7 +330,7 @@ export default function NewServiceOrder({
         message: "Service Order created successfully.",
         color: "green",
       });
-      queryClient.invalidateQueries({ queryKey: ["service_orders_list"] });
+      queryClient.invalidateQueries({ queryKey: ["service_orders_table_view"] });
       router.push("/dashboard/serviceorders");
     },
     onError: (err: any) => {

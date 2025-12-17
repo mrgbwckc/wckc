@@ -50,6 +50,11 @@ const dashboardLinks: SidebarLink[] = [
     path: "/dashboard/serviceorders",
   },
   {
+    iconName: "MdFeedback",
+    label: "Backorders",
+    path: "/dashboard/backorders",
+  },
+  {
     iconName: "FaClipboardCheck",
     label: "Inspections",
     path: "/dashboard/inspections",

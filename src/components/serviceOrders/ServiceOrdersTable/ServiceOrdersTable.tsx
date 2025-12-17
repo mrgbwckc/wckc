@@ -46,6 +46,7 @@ import {
   FaCheckCircle,
   FaTimesCircle,
   FaTools,
+  FaTrash,
 } from "react-icons/fa";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -54,6 +55,8 @@ import { Views } from "@/types/db";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useDisclosure } from "@mantine/hooks";
 import JobDetailsDrawer from "@/components/Shared/JobDetailsDrawer/JobDetailsDrawer";
+import { useDeleteServiceOrder } from "@/hooks/useDeleteServiceOrder";
+
 dayjs.extend(utc);
 type ServiceOrderView = Views<"service_orders_table_view">;
 
@@ -72,6 +75,8 @@ export default function ServiceOrdersTable() {
   const [drawerJobId, setDrawerJobId] = useState<number | null>(null);
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] =
     useDisclosure(false);
+
+  const deleteServiceOrder = useDeleteServiceOrder();
 
   const handleJobClick = (id: number) => {
     setDrawerJobId(id);
@@ -107,6 +112,17 @@ export default function ServiceOrdersTable() {
   const handleStatusChange = (status: "ALL" | "OPEN" | "COMPLETED") => {
     setStatusFilter(status);
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
+  const handleDelete = (e: React.MouseEvent, id: number, soNumber: string) => {
+    e.stopPropagation();
+    if (
+      window.confirm(
+        `Are you sure you want to delete Service Order #${soNumber}?`
+      )
+    ) {
+      deleteServiceOrder.mutate(id);
+    }
   };
 
   const { data, isLoading, isError, error } = useServiceOrdersTable({
@@ -252,6 +268,31 @@ export default function ServiceOrdersTable() {
         );
       },
     }),
+    columnHelper.display({
+      id: "actions",
+      header: "Actions",
+      size: 100,
+      minSize: 80,
+      cell: (info) => {
+        const id = info.row.original.service_order_id;
+        const soNumber = info.row.original.service_order_number;
+
+        if (!canEditServiceOrders || !id) return null;
+
+        return (
+          <Group justify="center">
+            <ActionIcon
+              color="red"
+              variant="subtle"
+              onClick={(e) => handleDelete(e, id, soNumber || "")}
+              loading={deleteServiceOrder.isPending}
+            >
+              <FaTrash size={16} />
+            </ActionIcon>
+          </Group>
+        );
+      },
+    }),
   ];
 
   const table = useReactTable({
@@ -331,7 +372,6 @@ export default function ServiceOrdersTable() {
         )}
       </Group>
 
-      {}
       <Accordion variant="contained" radius="md" mb="md">
         <Accordion.Item value="search-filters">
           <Accordion.Control icon={<FaSearch size={16} />}>
