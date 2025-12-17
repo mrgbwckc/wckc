@@ -433,7 +433,7 @@ export default function PlantShippingTable() {
             </Text>
           </Stack>
         </Group>
-        {}
+        {/* PDF Button */}
         <Button
           variant="outline"
           color="violet"
@@ -444,7 +444,7 @@ export default function PlantShippingTable() {
         </Button>
       </Group>
 
-      {}
+      {/* Filters Accordion */}
       <Accordion variant="contained" radius="md" mb="md">
         <Accordion.Item value="filters">
           <Accordion.Control icon={<FaSearch size={16} />}>
@@ -506,7 +506,7 @@ export default function PlantShippingTable() {
         </Accordion.Item>
       </Accordion>
 
-      {}
+      {/* Accordion Table */}
       <ScrollArea
         style={{ flex: 1 }}
         type="always"
@@ -532,6 +532,13 @@ export default function PlantShippingTable() {
                 shipDate !== "Unscheduled" &&
                 dayjs(shipDate).isBefore(dayjs(), "day");
 
+              const uniqueJobCount = new Set(
+                jobsInGroup.map((r) => {
+                  const val = r.original.job_number || "";
+                  return val.split("-")[0].trim();
+                })
+              ).size;
+
               const totalBoxes = jobsInGroup.reduce((sum, row) => {
                 const parsed = parseInt(row.original.cabinet_box || "0", 10);
                 return isNaN(parsed) ? sum : sum + parsed;
@@ -549,7 +556,7 @@ export default function PlantShippingTable() {
                         </span>
                       </Text>
                       <Badge variant="light" color="black">
-                        {jobsInGroup.length} Jobs
+                        {uniqueJobCount} Jobs
                       </Badge>
                       {totalBoxes > 0 && (
                         <Badge
@@ -576,7 +583,7 @@ export default function PlantShippingTable() {
                         <Table.Tr>
                           {table
                             .getFlatHeaders()
-                            .slice(1) 
+                            .slice(1)
                             .map((header) => (
                               <Table.Th
                                 key={header.id}
@@ -595,7 +602,7 @@ export default function PlantShippingTable() {
                           <Table.Tr key={row.id}>
                             {row
                               .getVisibleCells()
-                              .slice(1) 
+                              .slice(1)
                               .map((cell) => (
                                 <Table.Td
                                   key={cell.id}
@@ -624,7 +631,7 @@ export default function PlantShippingTable() {
         )}
       </ScrollArea>
 
-      {}
+      {/* Pagination */}
       <Box
         style={{
           borderTop: "1px solid #eee",
@@ -641,7 +648,7 @@ export default function PlantShippingTable() {
         />
       </Box>
 
-      {}
+      {/* Modals */}
       <ShippingPdfPreviewModal
         opened={pdfOpened}
         onClose={closePdf}

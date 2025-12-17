@@ -145,15 +145,20 @@ export const PlantWrapSchedulePdf = ({
           const displayDate = isUnscheduled
             ? "Unscheduled"
             : dayjs(dateKey).format("ddd, MMM D, YYYY");
-
+          const uniqueJobCount = new Set(
+            rows.map((r) => {
+              const val = r.job_number || "";
+              return val.split("-")[0].trim();
+            })
+          ).size;
           const totalBoxes = rows.reduce((sum, r) => {
             const val = parseInt(r.cabinet_box || "0", 10);
             return isNaN(val) ? sum : sum + val;
           }, 0);
 
           return (
-            <View key={dateKey} wrap={false}>
-              <View style={styles.dateGroupHeader}>
+            <View key={dateKey}>
+              <View style={styles.dateGroupHeader} wrap={false}>
                 <Text style={styles.dateGroupText}>
                   WRAP DATE: {displayDate}
                 </Text>
@@ -163,11 +168,11 @@ export const PlantWrapSchedulePdf = ({
                     { fontWeight: "normal", fontSize: 9 },
                   ]}
                 >
-                  ({rows.length} Jobs, {totalBoxes} Boxes)
+                  ({uniqueJobCount} Jobs, {totalBoxes} Boxes)
                 </Text>
               </View>
 
-              <View style={styles.tableHeader}>
+              <View style={styles.tableHeader} wrap={false}>
                 <Text style={[styles.headerText, styles.colJob]}>Job #</Text>
                 <Text style={[styles.headerText, styles.colClient]}>
                   Client
@@ -186,7 +191,7 @@ export const PlantWrapSchedulePdf = ({
               </View>
 
               {rows.map((row) => (
-                <View style={styles.tableRow} key={row.job_id}>
+                <View style={styles.tableRow} key={row.job_id} wrap={false}>
                   <Text style={[styles.rowText, styles.colJob]}>
                     {row.job_number}
                   </Text>
@@ -231,17 +236,6 @@ export const PlantWrapSchedulePdf = ({
             </View>
           );
         })}
-        <Text
-          style={{
-            position: "absolute",
-            bottom: 30,
-            left: 30,
-            fontSize: 8,
-            color: "#999",
-          }}
-        >
-          Generated on {dayjs().format("YYYY-MM-DD HH:mm")}
-        </Text>
       </Page>
     </Document>
   );

@@ -483,6 +483,12 @@ export default function PlantTableWrap() {
             {sortedGroupKeys.map((wrapDate) => {
               const jobsInGroup = groupedRows[wrapDate];
               const isPastDue = dayjs(wrapDate).isBefore(dayjs(), "day");
+              const uniqueJobCount = new Set(
+                jobsInGroup.map((r) => {
+                  const val = r.original.job_number || "";
+                  return val.split("-")[0].trim();
+                })
+              ).size;
               const totalBoxes = jobsInGroup.reduce((sum, row) => {
                 const parsed = parseInt(row.original.cabinet_box || "0", 10);
                 return isNaN(parsed) ? sum : sum + parsed;
@@ -500,7 +506,7 @@ export default function PlantTableWrap() {
                         </span>
                       </Text>
                       <Badge variant="light" color="black">
-                        {jobsInGroup.length} Jobs
+                        {uniqueJobCount} Jobs
                       </Badge>
                       {totalBoxes > 0 && (
                         <Badge
