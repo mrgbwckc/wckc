@@ -45,7 +45,7 @@ import {
   FaShippingFast,
 } from "react-icons/fa";
 import dayjs from "dayjs";
-import { DateInput } from "@mantine/dates";
+import { DateInput, DatePickerInput } from "@mantine/dates";
 import { useInstallationTable } from "@/hooks/useInstallationTable";
 import { Views } from "@/types/db";
 import { useDisclosure } from "@mantine/hooks";
@@ -404,69 +404,100 @@ export default function InstallationTable() {
                 }
                 onKeyDown={(e) => e.key === "Enter" && handleApplyFilters()}
               />
-              <DateInput
-                label="Scheduled Inst. Date"
-                placeholder="Filter by Date"
+              <DatePickerInput
+                type="range"
+                label="Installation Date"
+                placeholder="Filter by Date Range"
                 clearable
                 value={
-                  getInputFilterValue("installation_date")
-                    ? dayjs(getInputFilterValue("installation_date")).toDate()
-                    : null
+                  (inputFilters.find((f) => f.id === "installation_date")
+                    ?.value as [Date | null, Date | null]) || [null, null]
                 }
-                onChange={(date) => {
-                  const formattedDate = date
-                    ? dayjs(date).format("YYYY-MM-DD")
-                    : undefined;
-                  setInputFilterValue("installation_date", formattedDate);
+                onChange={(value) => {
+                  setInputFilterValue("installation_date", value as any);
                 }}
                 valueFormat="YYYY-MM-DD"
               />
-              <DateInput
+              <DatePickerInput
+                type="range"
                 label="Shipping Date"
-                placeholder="Filter by shipping date"
+                placeholder="Filter by Date Range"
                 clearable
                 value={
-                  getInputFilterValue("ship_schedule")
-                    ? dayjs(getInputFilterValue("ship_schedule")).toDate()
-                    : null
+                  (inputFilters.find((f) => f.id === "ship_schedule")
+                    ?.value as [Date | null, Date | null]) || [null, null]
                 }
-                onChange={(date) => {
-                  const formattedDate = date
-                    ? dayjs(date).format("YYYY-MM-DD")
-                    : undefined;
-                  setInputFilterValue("ship_schedule", formattedDate);
+                onChange={(value) => {
+                  setInputFilterValue("ship_schedule", value as any);
                 }}
                 valueFormat="YYYY-MM-DD"
               />
-              <Switch
-                label="Not Shipped"
-                size="md"
-                thumbIcon={<FaCheckCircle />}
-                styles={{
-                  track: {
-                    cursor: "pointer",
-                    background:
-                      getInputFilterValue("has_shipped") === "true"
-                        ? "linear-gradient(135deg, #6c63ff 0%, #4a00e0 100%)"
-                        : "linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%)",
-                    color: "white",
-                    border: "none",
-                  },
-                  thumb: {
-                    background:
-                      getInputFilterValue("has_shipped") === "true"
-                        ? "#6e54ffff"
-                        : "#d1d1d1ff",
-                  },
+              <Group
+                style={{
+                  display: "flex",
+                  alignItems: "flex-end",
+                  paddingBottom: "6px",
                 }}
-                checked={getInputFilterValue("has_shipped") === "true"}
-                onChange={(e) =>
-                  setInputFilterValue(
-                    "has_shipped",
-                    e.target.checked ? "true" : undefined
-                  )
-                }
-              />
+              >
+                <Switch
+                  label="Not Shipped"
+                  size="md"
+                  thumbIcon={<FaCheckCircle />}
+                  styles={{
+                    track: {
+                      cursor: "pointer",
+                      background:
+                        getInputFilterValue("has_shipped") === "true"
+                          ? "linear-gradient(135deg, #6c63ff 0%, #4a00e0 100%)"
+                          : "linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%)",
+                      color: "white",
+                      border: "none",
+                    },
+                    thumb: {
+                      background:
+                        getInputFilterValue("has_shipped") === "true"
+                          ? "#6e54ffff"
+                          : "#d1d1d1ff",
+                    },
+                  }}
+                  checked={getInputFilterValue("has_shipped") === "true"}
+                  onChange={(e) =>
+                    setInputFilterValue(
+                      "has_shipped",
+                      e.target.checked ? "true" : undefined
+                    )
+                  }
+                />
+                <Switch
+                  label="Rush"
+                  size="md"
+                  thumbIcon={<FaCheckCircle />}
+                  styles={{
+                    track: {
+                      cursor: "pointer",
+                      background:
+                        getInputFilterValue("rush") === "true"
+                          ? "linear-gradient(135deg, #6c63ff 0%, #4a00e0 100%)"
+                          : "linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%)",
+                      color: "white",
+                      border: "none",
+                    },
+                    thumb: {
+                      background:
+                        getInputFilterValue("rush") === "true"
+                          ? "#6e54ffff"
+                          : "#d1d1d1ff",
+                    },
+                  }}
+                  checked={getInputFilterValue("rush") === "true"}
+                  onChange={(e) =>
+                    setInputFilterValue(
+                      "rush",
+                      e.target.checked ? "true" : undefined
+                    )
+                  }
+                />
+              </Group>
             </SimpleGrid>
 
             <Group justify="flex-end" mt="md">

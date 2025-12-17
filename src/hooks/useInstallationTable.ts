@@ -5,6 +5,7 @@ import {
   ColumnFiltersState,
   SortingState,
 } from "@tanstack/react-table";
+import dayjs from "dayjs";
 
 interface UseInstallationTableParams {
   pagination: PaginationState;
@@ -28,6 +29,15 @@ export function useInstallationTable({
 
       columnFilters.forEach((filter) => {
         const { id, value } = filter;
+        if (
+          (id === "installation_date" || id === "ship_schedule") &&
+          Array.isArray(value)
+        ) {
+          const [start, end] = value;
+          if (start) query = query.gte(id, dayjs(start).format("YYYY-MM-DD"));
+          if (end) query = query.lte(id, dayjs(end).format("YYYY-MM-DD"));
+          return;
+        }
         const valStr = String(value);
         if (!valStr) return;
 
@@ -46,14 +56,12 @@ export function useInstallationTable({
               `installer_company.ilike.%${valStr}%,installer_first_name.ilike.%${valStr}%,installer_last_name.ilike.%${valStr}%`
             );
             break;
-          case "installation_date":
-            query = query.eq("installation_date", valStr);
-            break;
-          case "ship_schedule":
-            query = query.eq("ship_schedule", valStr);
-            break;
+
           case "has_shipped":
             query = query.eq("has_shipped", valStr === "false");
+            break;
+          case "rush":
+            query = query.eq("rush", valStr === "true");
             break;
           default:
             break;
