@@ -76,7 +76,7 @@ export default function InstallationTable() {
     x: number;
     y: number;
     filterId: string | null;
-    filterValue: any | null; 
+    filterValue: any | null;
   }>({
     visible: false,
     x: 0,
@@ -176,7 +176,7 @@ export default function InstallationTable() {
         height: "100%",
         display: "flex",
         alignItems: "center",
-        cursor: "context-menu",
+        cursor: "pointer",
       }}
       onContextMenu={onContextMenu}
     >
@@ -329,6 +329,7 @@ export default function InstallationTable() {
           >
             <Badge
               variant="gradient"
+              style={{ cursor: "pointer" }}
               gradient={
                 shipped
                   ? { from: "lime", to: "green", deg: 90 }
@@ -785,7 +786,7 @@ export default function InstallationTable() {
                         `/dashboard/installation/${row.original.job_id}`
                       )
                     }
-                    onContextMenu={(e) => e.preventDefault()} 
+                    onContextMenu={(e) => e.preventDefault()}
                     style={{ cursor: "pointer", backgroundColor: bgColor }}
                   >
                     {row.getVisibleCells().map((cell) => (
