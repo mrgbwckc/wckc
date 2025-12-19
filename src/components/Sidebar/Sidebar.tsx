@@ -11,8 +11,13 @@ import {
   Collapse,
   UnstyledButton,
   Center,
+  Tooltip,
+  Menu,
+  ActionIcon,
+  Code,
 } from "@mantine/core";
 import { useState, useEffect } from "react";
+import { useMediaQuery } from "@mantine/hooks";
 import {
   FaHome,
   FaUsers,
@@ -25,11 +30,12 @@ import {
   FaClipboardCheck,
   FaTruckLoading,
   FaBoxOpen,
+  FaChevronLeft,
 } from "react-icons/fa";
-import { FaGears } from "react-icons/fa6";
+import { FaGears, FaBarsStaggered } from "react-icons/fa6";
 import { MdFactory, MdFeedback, MdSupervisorAccount } from "react-icons/md";
 import { GoTools } from "react-icons/go";
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import { SignedIn, UserButton } from "@clerk/nextjs";
 import { GrSchedules } from "react-icons/gr";
 
 import { useNavigationGuard } from "@/providers/NavigationGuardProvider";
@@ -68,10 +74,16 @@ const iconMap: Record<string, any> = {
   MdFeedback,
 };
 
-function MainLink({ item }: { item: SidebarLink }) {
+function MainLink({
+  item,
+  collapsed,
+}: {
+  item: SidebarLink;
+  collapsed: boolean;
+}) {
   const pathname = usePathname();
   const Icon = iconMap[item.iconName] || FaHome;
-  const hasLinks = Array.isArray(item.links);
+  const hasLinks = Array.isArray(item.links) && item.links.length > 0;
   const { navigatePush } = useNavigationGuard();
 
   const isActive = item.path
@@ -85,209 +97,264 @@ function MainLink({ item }: { item: SidebarLink }) {
   const [opened, setOpened] = useState(isChildActive);
 
   useEffect(() => {
-    if (isChildActive) {
-      setOpened(true);
-    }
-  }, [isChildActive]);
+    if (isChildActive && !collapsed) setOpened(true);
+  }, [isChildActive, collapsed]);
 
-  const linkContent = (
-    <Group
-      justify="space-between"
-      p="xs"
-      style={{
-        borderRadius: 6,
-        backgroundColor:
-          isActive || (hasLinks && isChildActive)
-            ? "rgba(255, 255, 255, 0.1)"
-            : "transparent",
-        color:
-          isActive || (hasLinks && isChildActive)
-            ? "#fff"
-            : "rgba(255, 255, 255, 0.7)",
-        cursor: "pointer",
-        transition: "all 0.3s",
-      }}
-      onMouseEnter={(e) => {
-        if (!isActive && !isChildActive) {
-          e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
-          e.currentTarget.style.color = "#fff";
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!isActive && !isChildActive) {
-          e.currentTarget.style.background = "transparent";
-          e.currentTarget.style.color = "rgba(255, 255, 255, 0.7)";
-        }
-      }}
-    >
-      <Group gap="xs">
-        <Box
-          style={{
-            width: rem(18),
-            height: rem(18),
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Icon style={{ width: rem(18), height: rem(18) }} />
-        </Box>
-        <Text size="sm" fw={isActive || isChildActive ? 600 : 400}>
-          {item.label}
-        </Text>
-      </Group>
-      {hasLinks && (
-        <FaChevronRight
-          size={12}
-          style={{
-            transform: opened ? "rotate(90deg)" : "none",
-            transition: "transform 200ms ease",
-          }}
-        />
-      )}
-    </Group>
-  );
+  const navItemStyle = {
+    borderRadius: 6,
+    backgroundColor:
+      isActive || isChildActive ? "rgba(255, 255, 255, 0.15)" : "transparent",
+    color: isActive || isChildActive ? "#fff" : "rgba(255, 255, 255, 0.7)",
+    cursor: "pointer",
+    width: "100%",
+    minHeight: rem(40),
+    display: "flex",
+    alignItems: "center",
+    transition: "background 150ms ease",
+  };
 
-  if (hasLinks) {
-    return (
-      <>
-        <UnstyledButton
-          onClick={() => setOpened((o) => !o)}
-          style={{ width: "100%", display: "block" }}
+  if (collapsed) {
+    if (hasLinks) {
+      return (
+        <Menu
+          position="right-start"
+          offset={10}
+          trigger="hover"
+          openDelay={0}
+          closeDelay={50}
+          withinPortal
+          transitionProps={{ transition: "fade", duration: 100 }}
         >
-          {linkContent}
-        </UnstyledButton>
-        <Collapse in={opened}>
-          <Stack
-            gap={2}
-            mt={2}
-            pl={10}
+          <Menu.Target>
+            <UnstyledButton p="xs" style={navItemStyle}>
+              <Center style={{ width: "100%" }}>
+                <Icon size={20} />
+              </Center>
+            </UnstyledButton>
+          </Menu.Target>
+          <Menu.Dropdown
             style={{
-              borderLeft: "1px solid rgba(255,255,255,0.1)",
-              marginLeft: rem(14),
+              backgroundColor: colors.violet.primary,
+              border: `1px solid ${colors.violet.light}`,
+              boxShadow: "0 10px 20px rgba(0,0,0,0.2)",
+              zIndex: 1000,
             }}
           >
-            {item.links?.map((link) => (
-              <MainLink key={link.label} item={link} />
-            ))}
-          </Stack>
-        </Collapse>
-      </>
+            <Menu.Label
+              style={{ color: "white", opacity: 0.7, fontWeight: 700 }}
+            >
+              {item.label}
+            </Menu.Label>
+            {item.links?.map((link) => {
+              const SubIcon = iconMap[link.iconName] || FaHome;
+              return (
+                <Menu.Item
+                  key={link.label}
+                  leftSection={<SubIcon size={14} />}
+                  onClick={() => link.path && navigatePush(link.path)}
+                  style={{
+                    color:
+                      pathname === link.path ? "#fff" : "rgba(255,255,255,0.8)",
+                    backgroundColor:
+                      pathname === link.path
+                        ? "rgba(255,255,255,0.1)"
+                        : "transparent",
+                  }}
+                >
+                  {link.label}
+                </Menu.Item>
+              );
+            })}
+          </Menu.Dropdown>
+        </Menu>
+      );
+    }
+
+    return (
+      <Tooltip label={item.label} position="right" withArrow openDelay={200}>
+        <UnstyledButton
+          p="xs"
+          style={navItemStyle}
+          onClick={() => item.path && navigatePush(item.path)}
+        >
+          <Center style={{ width: "100%" }}>
+            <Icon size={20} />
+          </Center>
+        </UnstyledButton>
+      </Tooltip>
     );
   }
 
   return (
-    <UnstyledButton
-      component={Link}
-      href={item.path || "#"}
-      onClick={(e: React.MouseEvent) => {
-        if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
-          return;
+    <>
+      <UnstyledButton
+        onClick={() =>
+          hasLinks ? setOpened((o) => !o) : item.path && navigatePush(item.path)
         }
-        e.preventDefault();
-        if (item.path) {
-          navigatePush(item.path);
-        }
-      }}
-      style={{ width: "100%", display: "block" }}
-    >
-      {linkContent}
-    </UnstyledButton>
+        p="xs"
+        style={navItemStyle}
+      >
+        <Group justify="space-between" wrap="nowrap" style={{ width: "100%" }}>
+          <Group gap="sm" wrap="nowrap">
+            <Icon size={18} />
+            <Text
+              size="sm"
+              fw={isActive || isChildActive ? 600 : 400}
+              style={{ whiteSpace: "nowrap" }}
+            >
+              {item.label}
+            </Text>
+          </Group>
+          {hasLinks && (
+            <FaChevronRight
+              size={10}
+              style={{
+                transform: opened ? "rotate(90deg)" : "none",
+                transition: "transform 200ms ease",
+                flexShrink: 0,
+              }}
+            />
+          )}
+        </Group>
+      </UnstyledButton>
+      {hasLinks && (
+        <Collapse in={opened}>
+          <Stack
+            gap={2}
+            mt={4}
+            pl={20}
+            style={{
+              borderLeft: "1px solid rgba(255,255,255,0.1)",
+              marginLeft: rem(12),
+            }}
+          >
+            {item.links?.map((link) => (
+              <MainLink key={link.label} item={link} collapsed={collapsed} />
+            ))}
+          </Stack>
+        </Collapse>
+      )}
+    </>
   );
 }
 
 export default function Sidebar({ links }: SidebarProps) {
-  const theme = useMantineTheme();
+  const isSmallScreen = useMediaQuery("(max-width: 1024px)");
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    setCollapsed(!!isSmallScreen);
+  }, [isSmallScreen]);
+
+  const width = collapsed ? rem(70) : rem(240);
 
   return (
     <Box
+      component="nav"
       style={{
-        width: rem(220),
-        minWidth: rem(220),
+        width: width,
+        minWidth: width,
         height: "100vh",
-        overflowY: "auto",
-        scrollbarWidth: "none",
         background: linearGradients.primaryVertical,
-        borderRight: `1px solid ${theme.colors.gray[3]}`,
         display: "flex",
         flexDirection: "column",
-        padding: theme.spacing.md,
-        paddingTop: 0,
+        transition: "width 250ms cubic-bezier(0.4, 0, 0.2, 1)",
+        position: "sticky",
+        top: 0,
+        left: 0,
+        zIndex: 100,
+        overflow: "hidden",
       }}
     >
-      <Center>
-        <TopNavigationBar />
-      </Center>
-      {}
-      <Group justify="space-between" mb="lg">
-        <Text fz="lg" fw={700} style={{ color: "white" }}>
-          WCKC Tracker
-        </Text>
-      </Group>
+      <Box p="md" style={{ overflow: "hidden" }}>
+        <Group
+          justify={collapsed ? "center" : "space-between"}
+          mb="lg"
+          wrap="nowrap"
+        >
+          {!collapsed && (
+            <Text
+              fz="lg"
+              fw={800}
+              style={{ color: "white", whiteSpace: "nowrap" }}
+            >
+              WCKC Tracker{" "}
+              <Code
+                style={{
+                  fontSize: "8px",
+                  color: "#fff",
+                  backgroundColor: "#5700bbff",
+                }}
+              >
+                v1.0.0
+              </Code>
+            </Text>
+          )}
+          <ActionIcon
+            variant="subtle"
+            color="white"
+            onClick={() => setCollapsed(!collapsed)}
+            size="lg"
+            style={{ flexShrink: 0 }}
+          >
+            {collapsed ? (
+              <FaBarsStaggered size={18} />
+            ) : (
+              <FaChevronLeft size={14} />
+            )}
+          </ActionIcon>
+        </Group>
 
-      {}
-      <Stack gap="xs" style={{ flexGrow: 1 }}>
+        <Box
+          style={{
+            height: rem(50),
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            transition: "all 250ms ease",
+          }}
+        >
+          <TopNavigationBar />
+        </Box>
+      </Box>
+
+      <Stack
+        gap={4}
+        px="md"
+        style={{
+          flexGrow: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+          scrollbarWidth: "none",
+        }}
+      >
         {links.map(
           (link) =>
-            !link.permission && <MainLink key={link.label} item={link} />
+            !link.permission && (
+              <MainLink key={link.label} item={link} collapsed={collapsed} />
+            )
         )}
       </Stack>
 
-      {}
-      <Box mt="auto" pt="lg">
-        <SignedOut>
-          <SignInButton
-            mode="modal"
-            appearance={{
-              elements: {
-                button: {
-                  background: "#1a73e8",
-                  color: "#fff",
-                  padding: "8px 16px",
-                  borderRadius: "8px",
-                  border: "1px solid #1669c1",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  transition: "all 150ms ease",
-                  "&:hover": {
-                    background: "#1669c1",
-                  },
-                },
-              },
-            }}
-          />
-        </SignedOut>
+      <Box p="md" mt="auto">
         <SignedIn>
           <UserButton
-            showName={true}
+            showName={!collapsed}
             appearance={{
               elements: {
-                rootBox: {
-                  width: "100%",
-                },
+                rootBox: { width: "100%" },
                 userButtonTrigger: {
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
                   width: "100%",
-                  gap: "8px",
-                  padding: "8px 12px",
-                  borderRadius: "6px",
+                  justifyContent: collapsed ? "center" : "flex-start",
                   background: linearGradients.lightViolet,
-                  border: "1px solid #d3c9ff",
-                  cursor: "pointer",
-                  transition: "0.2s ease",
-                  "&:hover": {
-                    opacity: 0.9,
-                  },
+                  padding: collapsed ? "8px 0" : "8px 12px",
+                  borderRadius: "8px",
+                  transition: "padding 250ms ease",
                 },
                 userButtonOuterIdentifier: {
                   color: colors.violet.primary,
-                  fontWeight: 600,
-                  fontSize: "14px",
-                },
-                avatarBox: {
-                  border: `2px solid ${colors.violet.light}`,
+                  fontWeight: 700,
+                  display: collapsed ? "none" : "block",
                 },
               },
             }}
