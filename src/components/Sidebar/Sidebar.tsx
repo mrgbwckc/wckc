@@ -74,7 +74,10 @@ function MainLink({ item }: { item: SidebarLink }) {
   const hasLinks = Array.isArray(item.links);
   const { navigatePush } = useNavigationGuard();
 
-  const isActive = item.path ? pathname === item.path : false;
+  const isActive = item.path
+    ? pathname === item.path ||
+      (item.path !== "/dashboard" && pathname.startsWith(item.path))
+    : false;
   const isChildActive = hasLinks
     ? item.links?.some((link) => pathname === link.path) ?? false
     : false;
