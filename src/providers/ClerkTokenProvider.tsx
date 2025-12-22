@@ -35,7 +35,7 @@ export default function ClerkTokenProvider({
         }
 
         const supabaseToken = await getToken({
-          template: "supabase-test",
+          template: process.env.NEXT_PUBLIC_CLERK_SUPABASE_TEMPLATE,
           skipCache: true,
         });
 
@@ -49,7 +49,7 @@ export default function ClerkTokenProvider({
 
           if (refreshTime > 0) {
             const timeout = setTimeout(() => {
-              initializeToken(); 
+              initializeToken();
             }, refreshTime);
 
             return () => clearTimeout(timeout);
