@@ -598,10 +598,9 @@ export default function EditSale({ salesOrderId }: EditSaleProps) {
 
                 <Collapse in={form.values.stage === "SOLD"}>
                   <Group gap="xs" align="flex-end" style={{ flex: 1 }}>
-                    <NumberInput
+                    <TextInput
                       label="Job #"
                       placeholder="40000..."
-                      allowNegative={false}
                       {...form.getInputProps("manual_job_base")}
                       style={{ width: 120 }}
                       withAsterisk
