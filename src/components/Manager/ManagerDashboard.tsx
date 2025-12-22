@@ -327,7 +327,7 @@ export default function ManagerDashboardClient() {
 
             supabase
               .from("sales_orders")
-              .select("designer, created_at")
+              .select("created_at")
               .eq("stage", "SOLD")
               .gte("created_at", fiscalStartISO),
 
