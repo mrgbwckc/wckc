@@ -422,7 +422,7 @@ export default function ProdTable() {
               <TextInput
                 label="Job Number"
                 placeholder="e.g., 202401"
-                value={getInputFilterValue("job_number") as string}
+                value={(getInputFilterValue("job_number") as string) || ""}
                 onChange={(e) =>
                   setInputFilterValue("job_number", e.target.value)
                 }
@@ -431,12 +431,11 @@ export default function ProdTable() {
               <TextInput
                 label="Client"
                 placeholder="e.g., Smith"
-                value={getInputFilterValue("client") as string}
+                value={(getInputFilterValue("client") as string) || ""}
                 onChange={(e) => setInputFilterValue("client", e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleApplyFilters()}
               />
 
-              {/* Range Pickers */}
               <DatePickerInput
                 type="range"
                 label="Received Date"
@@ -486,7 +485,7 @@ export default function ProdTable() {
               <TextInput
                 label="Site Address"
                 placeholder="Street or City"
-                value={getInputFilterValue("site_address") as string}
+                value={(getInputFilterValue("site_address") as string) || ""}
                 onChange={(e) =>
                   setInputFilterValue("site_address", e.target.value)
                 }
