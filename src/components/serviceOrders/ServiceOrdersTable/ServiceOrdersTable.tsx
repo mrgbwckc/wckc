@@ -317,7 +317,7 @@ export default function ServiceOrdersTable() {
         const date = info.getValue();
         return (
           <CellWrapper>
-            {date ? dayjs(date).format("YYYY-MM-DD") : "—"}
+            {date ? dayjs.utc(date).format("YYYY-MM-DD") : "—"}
           </CellWrapper>
         );
       },
@@ -328,7 +328,7 @@ export default function ServiceOrdersTable() {
       minSize: 110,
       cell: (info) => {
         const date = info.getValue();
-        const isPast = dayjs(date).isBefore(dayjs(), "day");
+        const isPast = dayjs.utc(date).isBefore(dayjs(), "day");
         const isCompleted = !!info.row.original.completed_at;
 
         return (
@@ -339,7 +339,7 @@ export default function ServiceOrdersTable() {
                 fw={isPast && !isCompleted ? 700 : 400}
                 c={isPast && !isCompleted ? "red" : "dark"}
               >
-                {dayjs(date).format("YYYY-MM-DD")}
+                {dayjs.utc(date).format("YYYY-MM-DD")}
               </Text>
             ) : (
               "—"
@@ -373,7 +373,7 @@ export default function ServiceOrdersTable() {
                     </Text>
                   ) : (
                     <Text size="sm" c="green.8" fw={600}>
-                      {dayjs(date).format("YYYY-MM-DD")}
+                      {dayjs.utc(date).format("YYYY-MM-DD")}
                     </Text>
                   )}{" "}
                 </Group>
