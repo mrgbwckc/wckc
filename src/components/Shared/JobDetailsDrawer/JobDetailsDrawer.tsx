@@ -375,13 +375,13 @@ export default function JobDetailsDrawer({
           {}
           <SimpleGrid cols={4} spacing="xs">
             <CompactDateBlock label="Placement" date={prod?.placement_date} />
+            <CompactDateBlock label="Wrap Date" date={install?.wrap_date} />
             <CompactDateBlock
               label="Ship Date"
               date={prod?.ship_schedule}
               color="blue"
             />
 
-            <CompactDateBlock label="Wrap Date" date={install?.wrap_date} />
             <Stack align="center" justify="center">
               <Text size="10px" c="dimmed" fw={700} tt="uppercase">
                 Shipped
