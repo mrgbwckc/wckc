@@ -40,7 +40,6 @@ import { DatePickerInput } from "@mantine/dates";
 import {
   FaSearch,
   FaCheckCircle,
-  FaDollarSign,
   FaPlus,
   FaSort,
   FaSortUp,
@@ -50,6 +49,8 @@ import {
   FaEllipsisH,
   FaBan,
   FaCheckSquare,
+  FaTrash,
+  FaEdit,
 } from "react-icons/fa";
 import { useSupabase } from "@/hooks/useSupabase";
 import dayjs from "dayjs";
@@ -57,6 +58,7 @@ import { notifications } from "@mantine/notifications";
 import { Tables } from "@/types/db";
 import { useDisclosure } from "@mantine/hooks";
 import AddInvoice from "../AddInvoice/AddInvoice";
+import EditInvoice from "../EditInvoice/EditInvoice"; // Import the new component
 import { usePermissions } from "@/hooks/usePermissions";
 import { useInvoicesTable } from "@/hooks/useInvoicesTable";
 import { colors, gradients } from "@/theme";
@@ -83,16 +85,25 @@ export default function InvoicesTable() {
   const [inputFilters, setInputFilters] = useState<ColumnFiltersState>([]);
   const [activeFilters, setActiveFilters] = useState<ColumnFiltersState>([]);
 
+  // Modals
   const [addModalOpened, { open: openAddModal, close: closeAddModal }] =
     useDisclosure(false);
+  const [editModalOpened, { open: openEditModal, close: closeEditModal }] =
+    useDisclosure(false);
+
   const [
     commentModalOpened,
     { open: openCommentModal, close: closeCommentModal },
   ] = useDisclosure(false);
+
+  // State for editing
   const [editingComment, setEditingComment] = useState<{
     id: number;
     text: string;
   } | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRow | null>(
+    null
+  );
 
   // --- Fetch Data ---
   const { data, isLoading } = useInvoicesTable({
@@ -130,7 +141,7 @@ export default function InvoicesTable() {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   };
 
-  // --- Mutations (Unchanged) ---
+  // --- Mutations ---
   const togglePaidMutation = useMutation({
     mutationFn: async ({ id, isPaid }: { id: number; isPaid: boolean }) => {
       const { error } = await supabase
@@ -211,6 +222,31 @@ export default function InvoicesTable() {
     },
   });
 
+  const deleteInvoiceMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const { error } = await supabase
+        .from("invoices")
+        .delete()
+        .eq("invoice_id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices_list_server"] });
+      notifications.show({
+        title: "Deleted",
+        message: "Invoice deleted permanently.",
+        color: "red",
+      });
+    },
+    onError: (err: any) => {
+      notifications.show({
+        title: "Error",
+        message: err.message,
+        color: "red",
+      });
+    },
+  });
+
   const columnHelper = createColumnHelper<InvoiceRow>();
 
   const columns = [
@@ -241,21 +277,7 @@ export default function InvoicesTable() {
       cell: (info) =>
         info.getValue() ? dayjs(info.getValue()).format("YYYY-MM-DD") : "—",
     }),
-    columnHelper.accessor("date_due", {
-      header: "Due",
-      size: 110,
-      cell: (info) => {
-        const date = info.getValue();
-        if (!date) return "—";
-        const isOverdue =
-          dayjs(date).isBefore(dayjs()) && !info.row.original.paid_at;
-        return (
-          <Text c={isOverdue ? "red" : "dimmed"} fw={isOverdue ? 700 : 400}>
-            {dayjs(date).format("YYYY-MM-DD")}
-          </Text>
-        );
-      },
-    }),
+    // REMOVED "Due Date" Column as requested
     columnHelper.accessor(
       (row) => {
         const so = row.job?.sales_orders;
@@ -273,7 +295,7 @@ export default function InvoicesTable() {
         id: "shipping",
         header: "Shipping Address",
         size: 250,
-        enableSorting: false, // Sorting by computed/nested fields usually disabled unless custom logic
+        enableSorting: false,
         cell: (info) => (
           <Tooltip label={info.getValue()} openDelay={500}>
             <Text size="sm" lineClamp={1} c="dimmed">
@@ -359,6 +381,7 @@ export default function InvoicesTable() {
                   </ActionIcon>
                 </Menu.Target>
                 <Menu.Dropdown>
+                  <Menu.Label>Status</Menu.Label>
                   <Menu.Item
                     leftSection={<FaCheckSquare size={14} />}
                     onClick={() =>
@@ -367,12 +390,11 @@ export default function InvoicesTable() {
                         isPaid: !isPaid,
                       })
                     }
-                    disabled={isNoCharge ? true : false}
+                    disabled={!!isNoCharge}
                     color={isPaid ? "red" : "green"}
                   >
-                    {isPaid ? "Not Posted" : "Post"}
+                    {isPaid ? "Mark Unpaid" : "Mark Paid"}
                   </Menu.Item>
-                  <Menu.Divider />
                   <Menu.Item
                     leftSection={
                       isNoCharge ? (
@@ -390,6 +412,33 @@ export default function InvoicesTable() {
                     color={isNoCharge ? "blue" : "gray"}
                   >
                     {isNoCharge ? "Revert to Chargeable" : "Mark as No Charge"}
+                  </Menu.Item>
+
+                  <Menu.Divider />
+                  <Menu.Label>Edit</Menu.Label>
+                  <Menu.Item
+                    leftSection={<FaEdit size={14} />}
+                    onClick={() => {
+                      setSelectedInvoice(info.row.original);
+                      openEditModal();
+                    }}
+                  >
+                    Edit Invoice
+                  </Menu.Item>
+                  <Menu.Item
+                    leftSection={<FaTrash size={14} />}
+                    color="red"
+                    onClick={() => {
+                      if (
+                        confirm("Are you sure you want to delete this invoice?")
+                      ) {
+                        deleteInvoiceMutation.mutate(
+                          info.row.original.invoice_id
+                        );
+                      }
+                    }}
+                  >
+                    Delete
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
@@ -467,7 +516,6 @@ export default function InvoicesTable() {
           )}
         </Group>
 
-        {/* Filter Accordion */}
         <Accordion variant="contained" radius="md">
           <Accordion.Item value="filters">
             <Accordion.Control icon={<FaSearch size={14} />}>
@@ -633,6 +681,17 @@ export default function InvoicesTable() {
 
       <AddInvoice opened={addModalOpened} onClose={closeAddModal} />
 
+      {/* Edit Invoice Modal */}
+      <EditInvoice
+        opened={editModalOpened}
+        onClose={() => {
+          closeEditModal();
+          setSelectedInvoice(null);
+        }}
+        invoice={selectedInvoice}
+      />
+
+      {/* Quick Comment Edit Modal */}
       <Modal
         opened={commentModalOpened}
         onClose={closeCommentModal}

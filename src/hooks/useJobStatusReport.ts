@@ -8,7 +8,6 @@ export type JobStatusItem = {
   shipping_client_name: string;
   shipping_address: string;
   date_sold: string;
-  // Production Actuals
   cut_melamine: string | null;
   cut_finish: string | null;
   custom_finish: string | null;
@@ -16,11 +15,8 @@ export type JobStatusItem = {
   drawers: string | null;
   paint: string | null;
   assembly: string | null;
-  // New Fields
   wrap: string | null;
-  // Shipped removed as we only show non-shipped
 
-  // Computed
   completion_percentage: number;
 };
 
@@ -54,7 +50,8 @@ export function useJobStatusReport(dateRange: DateRange) {
             doors_completed_actual,
             drawer_completed_actual,
             paint_completed_actual,
-            assembly_completed_actual
+            assembly_completed_actual,
+            in_plant_actual
           ),
           installation!inner (
             wrap_completed,
@@ -62,10 +59,9 @@ export function useJobStatusReport(dateRange: DateRange) {
           )
         `
         )
-        // FILTER: Only show jobs that have NOT shipped
-        .eq("installation.has_shipped", false);
+        .eq("installation.has_shipped", false)
+        .not("production_schedule.in_plant_actual", "is", null);
 
-      // Apply Filter on Sales Order Date Sold
       if (dateRange[0]) {
         query = query.gte(
           "sales_orders.date_sold",
@@ -82,7 +78,6 @@ export function useJobStatusReport(dateRange: DateRange) {
       const { data, error } = await query;
       if (error) throw error;
 
-      // --- CLIENT SIDE SORTING ---
       const sortedData = data.sort((a: any, b: any) => {
         const dateA = new Date(a.sales_orders.date_sold).getTime();
         const dateB = new Date(b.sales_orders.date_sold).getTime();
@@ -94,7 +89,6 @@ export function useJobStatusReport(dateRange: DateRange) {
         const so = job.sales_orders;
         const inst = job.installation;
 
-        // Define all steps for completion % (Now 8 steps, removed Ship)
         const steps = [
           prod.cut_melamine_completed_actual,
           prod.cut_finish_completed_actual,
@@ -103,7 +97,7 @@ export function useJobStatusReport(dateRange: DateRange) {
           prod.drawer_completed_actual,
           prod.paint_completed_actual,
           prod.assembly_completed_actual,
-          inst?.wrap_completed, // Wrap
+          inst?.wrap_completed,
         ];
 
         const completedSteps = steps.filter(

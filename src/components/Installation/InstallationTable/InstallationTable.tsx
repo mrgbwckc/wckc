@@ -193,11 +193,10 @@ export default function InstallationTable() {
   );
 
   const columns = [
-    ...(permissions.isInstaller
+    ...(permissions.isInstaller || permissions.isAdmin
       ? [
           {
             id: "select",
-            // Disable sorting for the checkbox column
             enableSorting: false,
             header: ({ table }: any) => (
               <Checkbox

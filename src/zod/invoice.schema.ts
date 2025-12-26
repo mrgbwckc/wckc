@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const InvoiceSchema = z.object({
   invoice_id: z.number().optional(),
-  invoice_number: z.string().min(1, "Invoice Number is required"),
+  invoice_number: z.string().nullable().optional(),
   job_id: z
     .string()
     .or(z.number())
